@@ -1,0 +1,3 @@
+In this directory dataset for multitask demand forecasting is stored.
+It is sampled from kaggle demand-forecast dataset found here: https://www.kaggle.com/datasets/aswathrao/demand-forecasting
+As project progresses, other datasets can be employed as well.

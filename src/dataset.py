@@ -26,6 +26,8 @@ class Forecasting_Dataset(Dataset):
         self.stores_ids, self.sku_ids, self.feature_vector, self.y = self.get_x_y()
         self.stores_ids_lagged, self.sku_ids_lagged, self.feature_vector_lagged, self.y_lag = self.get_lagged_data(self.stores_ids, self.sku_ids, self.feature_vector, self.y, self.lag)
 
+        self.batch_sample = self.__getitem__(0)
+
     def load_data(self):
         data = pd.read_csv(self.path)
         # normalize prices data

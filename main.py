@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 import lightning as L
 import importlib
@@ -11,8 +12,11 @@ if __name__ == '__main__':
     # get training config
     config = get_args()
 
+    match = np.array([8091, 216418])
     # get dataset
     train_data = Forecasting_Dataset(path=config['DATA_PATH'], train=True, lag=config['LAG'],
-                                     columns=config['COLUMNS'], matches=None, onehot_paths=config['ONEHOT_EMBEDDERS'])
+                                     columns=config['COLUMNS'], matches=match, onehot_paths=config['ONEHOT_EMBEDDERS'])
+
+    batch = next(iter(train_data))
 
     print(0)

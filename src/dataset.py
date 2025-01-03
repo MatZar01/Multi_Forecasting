@@ -15,7 +15,7 @@ class Forecasting_Dataset(Dataset):
         self.matches = matches
 
         self.onehot_2 = pickle.load(open(onehot_paths['C2'], 'rb'))
-        self.onehot_3 = pickle.load(open(onehot_paths['C2'], 'rb'))
+        self.onehot_3 = pickle.load(open(onehot_paths['C3'], 'rb'))
 
         self.data = self.load_data()
         self.data_all = self.split_to_years(self.data)
@@ -23,25 +23,39 @@ class Forecasting_Dataset(Dataset):
         if self.matches is not None:
             self.data_all = self.get_match()
 
-        self.X, self.y = self.get_x_y()
-        self.X_lag, self.y_lag = self.get_lagged_data(self.X, self.y, self.lag)
-
-        print(0)
-
+        self.stores_ids, self.sku_ids, self.feature_vector, self.y = self.get_x_y()
+        self.stores_ids_lagged, self.sku_ids_lagged, self.feature_vector_lagged, self.y_lag = self.get_lagged_data(self.stores_ids, self.sku_ids, self.feature_vector, self.y, self.lag)
 
     def load_data(self):
-        return pd.read_csv(self.path)
+        data = pd.read_csv(self.path)
+        # normalize prices data
+        total_prices = np.array(data['total_price'].tolist())
+        base_prices = np.array(data['base_price'].tolist())
+        total_norm = self.normalize_data(total_prices)
+        base_norm = self.normalize_data(base_prices)
+        data['total_price'] = total_norm
+        data['base_price'] = base_norm
+        return data
 
-    def get_lagged_data(self, X, y, lag):
-        X_lagged = []
+    def get_lagged_data(self, stores_ids, sku_ids, feature_vector, y, lag):
+        stores_ids_lagged = []
+        sku_ids_lagged = []
+        feature_vector_lagged = []
         y_lagged = []
-        for i in range(X.shape[0] - (lag - 1) - 1):
-            X_lagged.append(X[i:i + lag, :])
-            y_lagged.append(y[i + lag])
-        return np.array(X_lagged).reshape(len(X_lagged), -1), np.array(y_lagged)
+        for i in range(feature_vector.shape[0] - (lag - 1) - 1):
+            stores_ids_lagged.append(stores_ids[i])
+            sku_ids_lagged.append(sku_ids[i])
+            feature_vector_lagged.append(feature_vector[i:i+lag, :])
+            y_lagged.append(y[i+lag])
+        return (np.array(stores_ids_lagged), np.array(sku_ids_lagged),
+                np.array(feature_vector_lagged).reshape(len(feature_vector_lagged), -1), np.array(y_lagged))
 
     def get_x_y(self):
-        return self.data_all[:, self.columns], self.data_all[:, -1]
+        stores_ids = self.data_all[:, 2]
+        sku_ids = self.data_all[:, 3]
+        y = self.data_all[:, -1]
+        feature_vector = self.data_all[:, self.columns + [-1]]  # [-1] is for the addition of past sales in vector
+        return stores_ids, sku_ids, feature_vector, y
 
     def get_match(self):
         store_match_train = self.data_all[np.where(self.data_all[:, 2] == self.matches[0])[0]]
@@ -63,34 +77,26 @@ class Forecasting_Dataset(Dataset):
             return val
 
     def encode_cats(self, batch):
-        X, y = batch
-        col_2_ins = X[0::len(self.columns)]
-        col_3_ins = X[1::len(self.columns)]
-        onehot_2 = self.onehot_2.transform(col_2_ins.reshape(-1, 1).astype(np.object_)).toarray()
-        onehot_3 = self.onehot_3.transform(col_3_ins.reshape(-1, 1).astype(np.object_)).toarray()
+        stores_ids, sku_ids, feature_vectors, y = batch
+        onehot_2 = self.onehot_2.transform(stores_ids.reshape(-1, 1).astype(np.object_)).toarray()
+        onehot_3 = self.onehot_3.transform(sku_ids.reshape(-1, 1).astype(np.object_)).toarray()
 
         emb_2 = torch.LongTensor(np.argmax(onehot_2, axis=1))
         emb_3 = torch.LongTensor(np.argmax(onehot_3, axis=1))
 
-        X = X.reshape(self.lag, -1)
-        X = X[:, 2:]
-        out = np.hstack([emb_2, emb_3, X]).flatten()
-
-        return out, y
+        return emb_2, emb_3, feature_vectors, y
 
     def normalize_data(self, data):
         return (data - np.min(data)) / (np.max(data) - np.min(data))
 
     def __len__(self):
-        return self.X_lag.shape[0]
+        return self.feature_vector_lagged.shape[0]
 
     def __getitem__(self, idx):
-        batch = self.X_lag[idx].astype(float), self.y_lag[idx].astype(float)
-        if self.embedders is not None:
-            batch = self.encode_cats(batch)
-        if self.normalize:
-            batch = (self.normalize_data(batch[0]), batch[1])
-        return torch.Tensor(batch[0]), torch.Tensor([batch[1]])
+        batch = (self.stores_ids_lagged[idx].astype(int), self.sku_ids_lagged[idx].astype(int),
+                 self.feature_vector_lagged[idx].astype(float), self.y_lag[idx].astype(float))
+        batch = self.encode_cats(batch)
+        return batch[0], batch[1], torch.Tensor(batch[2]), torch.Tensor([batch[3]])
 
 
 def get_matches(path):

@@ -6,16 +6,18 @@ import torch
 
 
 class Forecasting_Dataset(Dataset):
-    def __init__(self, path: str, train: bool, lag: int, columns: list, matches: np.ndarray | None,
+    def __init__(self, path: str, year: int, lag: int, columns: list, matches: np.ndarray | None,
                  onehot_paths: dict):
         self.path = path
-        self.train = train
+        self.year = year
         self.lag = lag
         self.columns = columns
         self.matches = matches
 
         self.onehot_2 = pickle.load(open(onehot_paths['C2'], 'rb'))
         self.onehot_3 = pickle.load(open(onehot_paths['C3'], 'rb'))
+        self.emb_2_size = self.onehot_2.categories_[0].shape[0]
+        self.emb_3_size = self.onehot_3.categories_[0].shape[0]
 
         self.data = self.load_data()
         self.data_all = self.split_to_years(self.data)
@@ -73,10 +75,16 @@ class Forecasting_Dataset(Dataset):
         train_y2 = data[np.where(years == 1)]
         val = data[np.where(years == 2)]
         train_all = np.vstack([train_y1, train_y2])
-        if self.train:
-            return train_all
-        else:
-            return val
+
+        match self.year:
+            case 1:
+                return train_y1
+            case 2:
+                return train_y2
+            case 3:
+                return val
+            case -1:
+                return train_all
 
     def encode_cats(self, batch):
         stores_ids, sku_ids, feature_vectors, y = batch

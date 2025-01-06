@@ -16,6 +16,14 @@ class L_model(L.LightningModule):
         self.scheduler = ReduceLROnPlateau(self.optimizer, factor=config['SCHEDULER']['FACTOR'],
                                            patience=config['SCHEDULER']['PATIENCE'])
 
+        self.error_train = []
+        self.error_test = []
+        self.loss_train = []
+        self.loss_test = []
+
+        self.best_error_train = np.inf
+        self.best_error_test = np.inf
+
     def configure_optimizers(self):
         return self.optimizer
 
@@ -31,10 +39,46 @@ class L_model(L.LightningModule):
     def training_step(self, batch):
         logits, loss, error = self.network_step(batch)
 
+        self.error_train.append(error.detach().cpu().numpy())
+        self.loss_train.append(loss.detach().cpu().numpy())
+
         return loss
 
     def validation_step(self, batch):
         logits, loss, error = self.network_step(batch)
 
+        self.error_test.append(error.detach().cpu().numpy())
+        self.loss_test.append(loss.detach().cpu().numpy())
+
         return loss
 
+    def on_train_epoch_end(self):
+        train_error = np.nanmean(self.error_train).item()
+        train_loss = np.nanmean(self.loss_train).item()
+        if train_error < self.best_error_train:
+            self.best_error_train = train_error
+
+        self.grapher.error_train.append(train_error)
+        self.grapher.loss_train.append(train_loss)
+
+        self.error_train = []
+        self.loss_train = []
+
+    def on_validation_epoch_end(self):
+        test_error = np.nanmean(self.error_test).item()
+        test_loss = np.nanmean(self.loss_test).item()
+        if test_error < self.best_error_test:
+            self.best_error_test = test_error
+
+        self.grapher.error_test.append(test_error)
+        self.grapher.loss_test.append(test_loss)
+        self.grapher.lr.append(self.optimizer.param_groups[0]["lr"])
+
+        self.scheduler.step(metrics=test_error)
+
+        self.error_test = []
+        self.loss_test = []
+
+    def on_train_end(self):
+        self.grapher.save_yaml()
+        print(f'[INFO] TRAINING END\nTrain error: {self.best_error_train}\nVal error: {self.best_error_test}')

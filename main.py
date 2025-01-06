@@ -31,9 +31,9 @@ if __name__ == '__main__':
                                     columns=config['COLUMNS'], matches=None, onehot_paths=config['ONEHOT_EMBEDDERS'])
 
     # get dataloaders
-    train_dataloader = DataLoader(train_data, batch_size=config['BATCH_SIZE'], shuffle=True, num_workers=4,
+    train_dataloader = DataLoader(train_data, batch_size=config['BATCH_SIZE'], shuffle=True, num_workers=15,
                                   persistent_workers=True)
-    test_dataloader = DataLoader(test_data, batch_size=config['BATCH_SIZE'], shuffle=True, num_workers=4,
+    test_dataloader = DataLoader(test_data, batch_size=config['BATCH_SIZE'], shuffle=False, num_workers=15,
                                  persistent_workers=True)
 
     # load model

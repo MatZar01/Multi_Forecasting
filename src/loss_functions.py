@@ -18,3 +18,12 @@ class MSLE(torch.nn.Module):
 
     def forward(self, yhat, y):
         return self.loss(yhat, y)
+
+
+class RMSLE(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.msle = MeanSquaredLogError()
+
+    def forward(self, yhat, y):
+        return torch.sqrt(self.msle(yhat, y))

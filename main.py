@@ -39,7 +39,7 @@ if __name__ == '__main__':
     # load model
     model_class = getattr(models_lib, config['MODEL'])
     model = model_class(sample_input=train_data.batch_sample, store_size=train_data.emb_2_size,
-                        sku_size=train_data.emb_3_size, embedding_dim=config['EMBEDDING_SIZE'])
+                        sku_size=train_data.emb_3_size, embedding_dim=config['EMBEDDING_SIZE']).to(config['DEVICE'])
 
     # load loss and test functions
     loss_class = getattr(loss_lib, config['LOSS_FN'])

@@ -5,7 +5,7 @@ config = {
                          'C3': '/home/mateusz/Desktop/Multi_Forecasting/embedders/onehot_C3.pkl'},
     'LOG_DIR': '/home/mateusz/Desktop/Multi_Forecasting/log_dir',
 
-    'LAG': 10,
+    'LAG': 15,
     'COLUMNS': [4, 5, 6, 7],  # [4, 5, 6, 7] for full feature vector
     'YEARS': {'TRAIN': -1, 'TEST': 3},
 

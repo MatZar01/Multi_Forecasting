@@ -35,10 +35,13 @@ class Forecasting_Dataset(Dataset):
         # normalize prices data
         total_prices = np.array(data['total_price'].tolist())
         base_prices = np.array(data['base_price'].tolist())
+        units_sold = np.array(data['units_sold'].tolist())
         total_norm = self.normalize_data(total_prices)
         base_norm = self.normalize_data(base_prices)
+        units_norm = self.normalize_data(units_sold)
         data['total_price'] = total_norm
         data['base_price'] = base_norm
+        data['units_norm'] = units_norm
         return data
 
     def get_lagged_data(self, stores_ids, sku_ids, feature_vector, y, lag):
@@ -47,18 +50,18 @@ class Forecasting_Dataset(Dataset):
         feature_vector_lagged = []
         y_lagged = []
         for i in range(feature_vector.shape[0] - (lag - 1) - 1):
-            stores_ids_lagged.append(stores_ids[i])
-            sku_ids_lagged.append(sku_ids[i])
+            stores_ids_lagged.append(stores_ids[i:i+lag])
+            sku_ids_lagged.append(sku_ids[i:i+lag])
             feature_vector_lagged.append(feature_vector[i:i+lag, :])
             y_lagged.append(y[i+lag])
         return (np.array(stores_ids_lagged), np.array(sku_ids_lagged),
-                np.array(feature_vector_lagged).reshape(len(feature_vector_lagged), -1), np.array(y_lagged))
+                np.array(feature_vector_lagged), np.array(y_lagged))
 
     def get_x_y(self):
         stores_ids = self.data_all[:, 2]
         sku_ids = self.data_all[:, 3]
-        y = self.data_all[:, -1]
-        feature_vector = self.data_all[:, self.columns + [-1]]  # [-1] is for the addition of past sales in vector
+        y = self.data_all[:, -2]  # [-2] as new column of normed sales is added
+        feature_vector = self.data_all[:, self.columns + [-1]]  # [-1] is for the addition of normed past sales in vector
         return stores_ids, sku_ids, feature_vector, y
 
     def get_match(self):

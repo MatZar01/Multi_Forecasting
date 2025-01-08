@@ -14,7 +14,8 @@ class L_model(L.LightningModule):
         self.grapher = grapher
 
         self.scheduler = ReduceLROnPlateau(self.optimizer, factor=config['SCHEDULER']['FACTOR'],
-                                           patience=config['SCHEDULER']['PATIENCE'])
+                                           patience=config['SCHEDULER']['PATIENCE'],
+                                           threshold=config['SCHEDULER']['THRESHOLD'])
 
         self.error_train = []
         self.error_test = []
@@ -64,6 +65,8 @@ class L_model(L.LightningModule):
         self.error_train = []
         self.loss_train = []
 
+        self.grapher.save_data()
+
     def on_validation_epoch_end(self):
         test_error = np.nanmean(self.error_test).item()
         test_loss = np.nanmean(self.loss_test).item()
@@ -80,5 +83,5 @@ class L_model(L.LightningModule):
         self.loss_test = []
 
     def on_train_end(self):
-        self.grapher.save_yaml()
+        self.grapher.save_data()
         print(f'[INFO] TRAINING END\nTrain error: {self.best_error_train}\nVal error: {self.best_error_test}')

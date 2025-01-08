@@ -1,6 +1,7 @@
 import lightning as L
 import numpy as np
 from torch.optim.lr_scheduler import ReduceLROnPlateau
+from .model_manager import Model_Manager
 
 
 class L_model(L.LightningModule):
@@ -12,6 +13,8 @@ class L_model(L.LightningModule):
         self.test_fn = test_fn
         self.optimizer = optimizer
         self.grapher = grapher
+
+        self.model_manager = Model_Manager(save_path=grapher.checkpoint_path)
 
         self.scheduler = ReduceLROnPlateau(self.optimizer, factor=config['SCHEDULER']['FACTOR'],
                                            patience=config['SCHEDULER']['PATIENCE'],
@@ -38,6 +41,7 @@ class L_model(L.LightningModule):
         return logits, loss, error
 
     def training_step(self, batch):
+        pass
         logits, loss, error = self.network_step(batch)
 
         self.error_train.append(error.detach().cpu().numpy())
@@ -81,6 +85,8 @@ class L_model(L.LightningModule):
 
         self.error_test = []
         self.loss_test = []
+
+        self.model_manager.save_model(model=self.model, current_error=self.best_error_test)
 
     def on_train_end(self):
         self.grapher.save_data()

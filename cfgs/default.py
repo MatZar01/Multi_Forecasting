@@ -7,11 +7,12 @@ config = {
 
     'LAG': 15,
     'COLUMNS': [4, 5, 6, 7],  # [4, 5, 6, 7] for full feature vector
-    'YEARS': {'TRAIN': -1, 'TEST': 3},
+    'YEARS': {'TRAIN': 1, 'META': 2, 'TEST': 3},
 
     'MODEL': 'MLP_base',
     'EMBEDDING_SIZE': 5,
-    'EPOCHS': 30,
+    'EPOCHS_PRE': 15,
+    'EPOCHS_META': 10,
     'LR': 1e-3,
     'WEIGHT_DECAY': 0.004,
     'BATCH_SIZE': 10,

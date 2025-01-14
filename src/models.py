@@ -6,6 +6,8 @@ class MLP_base(nn.Module):
     def __init__(self, sample_input, store_size, sku_size, embedding_dim):
         super().__init__()
 
+        self.meta_phase = False
+
         self.store_embedder = nn.Embedding(store_size, embedding_dim)
         self.sku_embedder = nn.Embedding(sku_size, embedding_dim)
 
@@ -29,9 +31,10 @@ class MLP_base(nn.Module):
             nn.Linear(256, 64),
             nn.ReLU(),
             nn.BatchNorm1d(64),
-            nn.Dropout(0.5),
-            nn.Linear(64, 1)
+            nn.Dropout(0.5)
         )
+
+        self.clf = nn.Linear(64, 1)
 
     def forward(self, store_in, sku_in, feature_vector):
         store_embedding = self.store_embedder(store_in)
@@ -40,5 +43,6 @@ class MLP_base(nn.Module):
         concatenated = torch.concatenate([store_embedding, sku_embedding, feature_vector], dim=-1).reshape(feature_vector.shape[0], -1)
 
         logits = self.model(concatenated)
+        logits = self.clf(logits)
 
         return logits

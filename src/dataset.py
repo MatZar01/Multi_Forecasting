@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import pickle
 import torch
+from torch.utils.data import DataLoader
 
 
 class Forecasting_Dataset(Dataset):
@@ -129,3 +130,21 @@ def get_matches(path):
     c_prod = np.transpose([np.tile(stores, len(skus)), np.repeat(skus, len(stores))])
     # pick one pair for experiments
     return c_prod
+
+
+def get_dataloader(config, year, matches):
+    train_data = Forecasting_Dataset(path=config['DATA_PATH'], year=year, lag=config['LAG'],
+                                     columns=config['COLUMNS'], matches=matches, onehot_paths=config['ONEHOT_EMBEDDERS'])
+    test_data = Forecasting_Dataset(path=config['DATA_PATH'], year=config['YEARS']['TEST'], lag=config['LAG'],
+                                    columns=config['COLUMNS'], matches=matches, onehot_paths=config['ONEHOT_EMBEDDERS'])
+
+    # get dataloaders
+    train_dataloader = DataLoader(train_data, batch_size=config['BATCH_SIZE'], shuffle=True, num_workers=15,
+                                  persistent_workers=True)
+    test_dataloader = DataLoader(test_data, batch_size=config['BATCH_SIZE'], shuffle=False, num_workers=15,
+                                 persistent_workers=True)
+
+    data_info = {'sample_input': train_data.batch_sample, 'store_size': train_data.emb_2_size,
+                 'sku_size': train_data.emb_3_size}
+
+    return train_dataloader, test_dataloader, data_info

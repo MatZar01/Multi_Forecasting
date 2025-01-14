@@ -9,10 +9,16 @@ class Model_Manager:
         self.last_best_error = np.inf
 
     def save_model(self, model, current_error):
+        # add prefix to model
+        if model.meta_phase:
+            name = 'meta'
+        else:
+            name = 'pre'
+
         model_cp = deepcopy(model)
         model_cp = model_cp.to('cpu')
-        torch.save(model_cp, f'{self.save_path}/last.pt')
+        torch.save(model_cp, f'{self.save_path}/{name}_last.pt')
 
         if current_error < self.last_best_error:
             self.last_best_error = current_error
-            torch.save(model_cp, f'{self.save_path}/best.pt')
+            torch.save(model_cp, f'{self.save_path}/{name}_best.pt')

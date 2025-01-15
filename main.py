@@ -37,22 +37,23 @@ if __name__ == '__main__':
     loss_fn = loss_class()
     test_fn = test_class()
 
+    ##### PRE-TRAINING PHASE #####
     # set optimizer
-    optimizer = torch.optim.AdamW(model.parameters(), lr=config['LR'],
+    optimizer = torch.optim.AdamW(model.parameters(), lr=config['LR_PRE'],
                                   weight_decay=config['WEIGHT_DECAY'], amsgrad=False)
 
-    ##### PRE-TRAINING PHASE #####
     # setup lightning trainer for pretraining
     light_model = L_model(model=model, loss_fn=loss_fn, test_fn=test_fn,
-                          optimizer=optimizer, config=config, grapher=grapher)
+                          optimizer=optimizer, config=config, grapher=grapher, meta_phase=False)
 
     light_trainer_pre = L.Trainer(accelerator=config['DEVICE'], max_epochs=config['EPOCHS_PRE'],
                                   limit_train_batches=500, limit_val_batches=400,
                                   check_val_every_n_epoch=1, log_every_n_steps=5,
                                   enable_progress_bar=True, enable_checkpointing=False,
-                                  logger=logger)
+                                  logger=logger, num_sanity_val_steps=0)
     # train model
     light_trainer_pre.fit(model=light_model, train_dataloaders=train_dataloader, val_dataloaders=test_dataloader)
+
 
     ##### META-TRAINING PHASE #####
     # get all matches
@@ -60,21 +61,22 @@ if __name__ == '__main__':
     # get datasets
     meta_train_dataloader, meta_test_dataloader, meta_data_info = get_dataloader(config=config,
                                                                                  year=config['YEARS']['META'],
-                                                                                 matches=matches_all[0])
+                                                                                 matches=matches_all[2])
+    # set optimizer
+    optimizer_meta = torch.optim.AdamW(model.parameters(), lr=config['LR_META'],
+                                       weight_decay=config['WEIGHT_DECAY'], amsgrad=False)
+
+    # setup lightning trainer for meta phase
+    light_model_meta = L_model(model=model, loss_fn=loss_fn, test_fn=test_fn,
+                               optimizer=optimizer_meta, config=config, grapher=grapher, meta_phase=True)
 
     light_trainer_meta = L.Trainer(accelerator=config['DEVICE'], max_epochs=config['EPOCHS_META'],
                                    limit_train_batches=500, limit_val_batches=400,
                                    check_val_every_n_epoch=1, log_every_n_steps=5,
                                    enable_progress_bar=True, enable_checkpointing=False,
-                                   logger=logger)
-
-    optimizer_meta = torch.optim.AdamW(model.parameters(), lr=config['LR'],
-                                       weight_decay=config['WEIGHT_DECAY'], amsgrad=False)
-
-    light_model_meta = L_model(model=model, loss_fn=loss_fn, test_fn=test_fn,
-                               optimizer=optimizer_meta, config=config, grapher=grapher)
+                                   logger=logger, num_sanity_val_steps=0)
 
     # train model
-    light_trainer_meta.fit(model=light_model, train_dataloaders=meta_train_dataloader, val_dataloaders=meta_test_dataloader)
+    light_trainer_meta.fit(model=light_model_meta, train_dataloaders=meta_train_dataloader, val_dataloaders=meta_test_dataloader)
 
     print('[INFO] DONE!')

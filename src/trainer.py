@@ -5,7 +5,7 @@ from .model_manager import Model_Manager
 
 
 class L_model(L.LightningModule):
-    def __init__(self, model, loss_fn, test_fn, optimizer, config, grapher):
+    def __init__(self, model, loss_fn, test_fn, optimizer, config, grapher, meta_phase):
         super().__init__()
 
         self.model = model
@@ -13,12 +13,19 @@ class L_model(L.LightningModule):
         self.test_fn = test_fn
         self.optimizer = optimizer
         self.grapher = grapher
+        self.meta_phase = meta_phase
 
         self.model_manager = Model_Manager(save_path=grapher.checkpoint_path)
 
-        self.scheduler = ReduceLROnPlateau(self.optimizer, factor=config['SCHEDULER']['FACTOR'],
-                                           patience=config['SCHEDULER']['PATIENCE'],
-                                           threshold=config['SCHEDULER']['THRESHOLD'])
+        if self.meta_phase:
+            self.model.meta_phase = True
+            self.scheduler = ReduceLROnPlateau(self.optimizer, factor=config['SCHEDULER_META']['FACTOR'],
+                                               patience=config['SCHEDULER_META']['PATIENCE'],
+                                               threshold=config['SCHEDULER_META']['THRESHOLD'])
+        else:
+            self.scheduler = ReduceLROnPlateau(self.optimizer, factor=config['SCHEDULER_PRE']['FACTOR'],
+                                               patience=config['SCHEDULER_PRE']['PATIENCE'],
+                                               threshold=config['SCHEDULER_PRE']['THRESHOLD'])
 
         self.error_train = []
         self.error_test = []

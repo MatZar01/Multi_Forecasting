@@ -55,6 +55,7 @@ class Grapher:
         ax1.plot([np.argmin(self.error_test)], [np.min(self.error_test)], 'ro')
         ax1.set_title(f'Error: {self.config["TEST_FN"]}')
         ax1.set(xlabel='Epoch', ylabel='Error')
+        ax1.axvline(self.config['EPOCHS_PRE'])
         ax1.grid()
 
         ax1.text(len(self.error_test)/3, np.max(self.error_test)*0.9,
@@ -78,6 +79,7 @@ class Grapher:
         ax2.plot([np.argmin(self.loss_test)], [np.min(self.loss_test)], 'ro')
         ax2.set_title(f'Loss: {self.config["LOSS_FN"]}')
         ax2.set(xlabel='Epoch', ylabel='Loss')
+        ax2.axvline(self.config['EPOCHS_PRE'])
         ax2.grid()
 
         ax2.text(len(self.loss_test) / 3, np.max(self.loss_test) * 0.9,

@@ -7,6 +7,7 @@ class MLP_base(nn.Module):
         super().__init__()
 
         self.meta_phase = False
+        self.current_task = None
 
         self.store_embedder = nn.Embedding(store_size, embedding_dim)
         self.sku_embedder = nn.Embedding(sku_size, embedding_dim)
@@ -36,13 +37,31 @@ class MLP_base(nn.Module):
 
         self.clf = nn.Linear(64, 1)
 
-    def forward(self, store_in, sku_in, feature_vector):
+        self.heads = {}
+
+    def forward(self, store_in, sku_in, feature_vector, matches):
         store_embedding = self.store_embedder(store_in)
         sku_embedding = self.sku_embedder(sku_in)
 
         concatenated = torch.concatenate([store_embedding, sku_embedding, feature_vector], dim=-1).reshape(feature_vector.shape[0], -1)
 
-        logits = self.model(concatenated)
-        logits = self.clf(logits)
+        features = self.model(concatenated)
+
+        if self.meta_phase:
+            matches = torch.unique(matches, dim=0).detach().cpu().numpy()
+            key = f'{matches[0][0]}_{matches[0][1]}'
+            self.current_task = key
+
+            if key not in self.heads.keys():
+                self.add_head(key=key)
+
+            logits = self.heads[key]['head'](features)
+
+        else:
+            logits = self.clf(features)
 
         return logits
+
+    def add_head(self, key):
+        self.heads[key] = {}
+        self.heads[key]['head'] = nn.Linear(64, 1).to('cuda')

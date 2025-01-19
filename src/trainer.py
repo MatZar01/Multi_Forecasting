@@ -39,8 +39,8 @@ class L_model(L.LightningModule):
         return self.optimizer
 
     def network_step(self, batch):
-        store_emb, sku_emb, feature_vector, label = batch
-        logits = self.model(store_emb, sku_emb, feature_vector)
+        store_emb, sku_emb, feature_vector, label, matches = batch
+        logits = self.model(store_emb, sku_emb, feature_vector, matches)
 
         loss = self.loss_fn(logits, label)
         error = self.test_fn(logits, label)

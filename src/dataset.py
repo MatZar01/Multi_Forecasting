@@ -25,6 +25,8 @@ class Forecasting_Dataset(Dataset):
 
         if self.matches is not None:
             self.data_all = self.get_match()
+        else:
+            self.matches = np.array([])
 
         self.stores_ids, self.sku_ids, self.feature_vector, self.y = self.get_x_y()
         self.stores_ids_lagged, self.sku_ids_lagged, self.feature_vector_lagged, self.y_lag = self.get_lagged_data(self.stores_ids, self.sku_ids, self.feature_vector, self.y, self.lag)
@@ -110,7 +112,7 @@ class Forecasting_Dataset(Dataset):
         batch = (self.stores_ids_lagged[idx].astype(int), self.sku_ids_lagged[idx].astype(int),
                  self.feature_vector_lagged[idx].astype(float), self.y_lag[idx].astype(float))
         batch = self.encode_cats(batch)
-        return batch[0], batch[1], torch.Tensor(batch[2]), torch.Tensor([batch[3]])
+        return batch[0], batch[1], torch.Tensor(batch[2]), torch.Tensor([batch[3]]), self.matches.astype(int)
 
 
 def get_matches(path):

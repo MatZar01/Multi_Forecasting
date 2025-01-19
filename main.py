@@ -2,10 +2,9 @@ import numpy as np
 import torch
 import lightning as L
 import importlib
-from torch.utils.data import DataLoader
 
 from src import get_args
-from src import Forecasting_Dataset, get_matches, get_dataloader
+from src import get_matches, get_dataloader
 from src import L_model
 from src import Grapher
 

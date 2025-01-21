@@ -31,6 +31,10 @@ class Grapher:
             os.makedirs(f'{base_pt}/{DIR_checkpoint}')
         return f'{base_pt}/{DIR}', f'{base_pt}/{DIR_checkpoint}'
 
+    def add_task_folder(self, task):
+        if not os.path.exists(f'{self.path}/{task}'):
+            os.makedirs(f'{self.path}/{task}')
+
     def save_yaml(self):
         out_dict = {'epoch_num': len(self.error_train),
                     'lr': self.lr,

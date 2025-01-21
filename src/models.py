@@ -5,6 +5,7 @@ from torch import nn
 class MLP_base(nn.Module):
     def __init__(self, sample_input, store_size, sku_size, embedding_dim):
         super().__init__()
+        self.dummy_param = nn.Parameter(torch.empty(0))
 
         self.meta_phase = False
         self.current_task = None
@@ -64,4 +65,4 @@ class MLP_base(nn.Module):
 
     def add_head(self, key):
         self.heads[key] = {}
-        self.heads[key]['head'] = nn.Linear(64, 1).to('cuda')
+        self.heads[key]['head'] = nn.Linear(64, 1).to(str(self.dummy_param.device))

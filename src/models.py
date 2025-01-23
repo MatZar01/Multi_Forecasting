@@ -49,7 +49,7 @@ class MLP_base(nn.Module):
         features = self.model(concatenated)
 
         if self.meta_phase:
-            matches = torch.unique(matches, dim=0).detach().cpu().numpy()
+            matches = torch.unique(matches.squeeze(), dim=0).detach().cpu().numpy()
             key = f'{matches[0][0]}_{matches[0][1]}'
             self.current_task = key
 

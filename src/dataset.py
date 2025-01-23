@@ -68,9 +68,12 @@ class Forecasting_Dataset(Dataset):
         return stores_ids, sku_ids, feature_vector, y
 
     def get_match(self):
-        store_match_train = self.data_all[np.where(self.data_all[:, 2] == self.matches[0])[0]]
-        train_single = store_match_train[np.where(store_match_train[:, 3] == self.matches[1])[0]]
-        return train_single
+        train_matches = []
+        for m in self.matches:
+            store_match_train = self.data_all[np.where(self.data_all[:, 2] == m[0])[0]]
+            train_single = store_match_train[np.where(store_match_train[:, 3] == m[1])[0]]
+            train_matches.append(train_single)
+        return np.concatenate(train_matches)
 
     def split_to_years(self, data):
         data = data.to_numpy()
@@ -118,20 +121,11 @@ class Forecasting_Dataset(Dataset):
 def get_matches(path):
     data = pd.read_csv(path)
     data = data.to_numpy()
-    years = np.array([int(x.split('/')[-1]) for x in data[:, 1]])
-    years = years - np.min(years)
 
-    train_y1 = data[np.where(years == 0)]
-    train_y2 = data[np.where(years == 1)]
-    data_train = np.vstack([train_y1, train_y2])
+    pairs = data[:, [2, 3]].astype(int)
+    uq_pairs = np.unique(pairs, axis=0)
 
-    # get stores ids and sku ids
-    stores = np.unique(data_train[:, 2])
-    skus = np.unique(data_train[:, 3])
-    # get cartesian product for store-sku
-    c_prod = np.transpose([np.tile(stores, len(skus)), np.repeat(skus, len(stores))])
-    # pick one pair for experiments
-    return c_prod
+    return uq_pairs
 
 
 def get_dataloader(config, year, matches):

@@ -47,7 +47,7 @@ if __name__ == '__main__':
 
     light_trainer_pre = L.Trainer(accelerator=config['DEVICE'], max_epochs=config['EPOCHS_PRE'],
                                   limit_train_batches=500, limit_val_batches=400,
-                                  check_val_every_n_epoch=1, log_every_n_steps=5,
+                                  check_val_every_n_epoch=1, log_every_n_steps=1,
                                   enable_progress_bar=True, enable_checkpointing=False,
                                   logger=logger, num_sanity_val_steps=0)
     # train model
@@ -60,7 +60,7 @@ if __name__ == '__main__':
     # get datasets
     meta_train_dataloader, meta_test_dataloader, meta_data_info = get_dataloader(config=config,
                                                                                  year=config['YEARS']['META'],
-                                                                                 matches=matches_all[2])
+                                                                                 matches=matches_all[[1]])
     # set optimizer
     optimizer_meta = torch.optim.AdamW(model.parameters(), lr=config['LR_META'],
                                        weight_decay=config['WEIGHT_DECAY'], amsgrad=False)
@@ -71,7 +71,7 @@ if __name__ == '__main__':
 
     light_trainer_meta = L.Trainer(accelerator=config['DEVICE'], max_epochs=config['EPOCHS_META'],
                                    limit_train_batches=500, limit_val_batches=400,
-                                   check_val_every_n_epoch=1, log_every_n_steps=5,
+                                   check_val_every_n_epoch=1, log_every_n_steps=1,
                                    enable_progress_bar=True, enable_checkpointing=False,
                                    logger=logger, num_sanity_val_steps=0)
 

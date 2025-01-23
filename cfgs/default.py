@@ -1,9 +1,9 @@
 config = {
     'DEVICE': 'cuda',
-    'DATA_PATH': '/home/mateusz/Desktop/Multi_Forecasting/DS/train.csv',
-    'ONEHOT_EMBEDDERS': {'C2': '/home/mateusz/Desktop/Multi_Forecasting/embedders/onehot_C2.pkl',
-                         'C3': '/home/mateusz/Desktop/Multi_Forecasting/embedders/onehot_C3.pkl'},
-    'LOG_DIR': '/home/mateusz/Desktop/Multi_Forecasting/log_dir',
+    'DATA_PATH': 'DS/train.csv',
+    'ONEHOT_EMBEDDERS': {'C2': 'embedders/onehot_C2.pkl',
+                         'C3': 'embedders/onehot_C3.pkl'},
+    'LOG_DIR': 'log_dir',
 
     'LAG': 15,
     'COLUMNS': [],  # [4, 5, 6, 7] for full feature vector
@@ -11,10 +11,13 @@ config = {
 
     'MODEL': 'MLP_base',
     'EMBEDDING_SIZE': 5,
-    'EPOCHS_PRE': 1,
+
+    'EPOCHS_PRE': 10,
     'EPOCHS_META': 30,
+
     'LR_PRE': 1e-3,
     'LR_META': 1e-3,
+
     'WEIGHT_DECAY': 0.04,
     'BATCH_SIZE': 10,
 

@@ -7,6 +7,7 @@ from src import get_args
 from src import get_matches, get_dataloader
 from src import L_model
 from src import Grapher
+from src import MultiTask_Manager
 
 
 if __name__ == '__main__':
@@ -20,6 +21,9 @@ if __name__ == '__main__':
     models_lib = importlib.import_module('src.models')
     # get loss dir for import
     loss_lib = importlib.import_module('src.loss_functions')
+
+    multitask_manager = MultiTask_Manager(config=config, grapher=grapher, logger=logger, model_lib=models_lib,
+                                          loss_lib=loss_lib)
 
     # get datasets
     train_dataloader, test_dataloader, data_info = get_dataloader(config=config, year=config['YEARS']['TRAIN'],

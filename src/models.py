@@ -7,9 +7,6 @@ class MLP_base(nn.Module):
         super().__init__()
         self.dummy_param = nn.Parameter(torch.empty(0))
 
-        self.meta_phase = False
-        self.current_task = None
-
         self.store_embedder = nn.Embedding(store_size, embedding_dim)
         self.sku_embedder = nn.Embedding(sku_size, embedding_dim)
 
@@ -36,11 +33,9 @@ class MLP_base(nn.Module):
             nn.Dropout(0.5)
         )
 
-        self.clf = nn.Linear(64, 1)
-
         self.heads = {}
 
-    def forward(self, store_in, sku_in, feature_vector, matches):
+    def forward(self, store_in, sku_in, feature_vector, task):
         store_embedding = self.store_embedder(store_in)
         sku_embedding = self.sku_embedder(sku_in)
 
@@ -48,21 +43,14 @@ class MLP_base(nn.Module):
 
         features = self.model(concatenated)
 
-        if self.meta_phase:
-            matches = torch.unique(matches.squeeze(), dim=0).detach().cpu().numpy()
-            key = f'{matches[0][0]}_{matches[0][1]}'
-            self.current_task = key
-
-            if key not in self.heads.keys():
-                self.add_head(key=key)
-
-            logits = self.heads[key]['head'](features)
-
-        else:
-            logits = self.clf(features)
+        logits = self.heads[task](features)
 
         return logits
 
-    def add_head(self, key):
-        self.heads[key] = {}
-        self.heads[key]['head'] = nn.Linear(64, 1).to(str(self.dummy_param.device))
+    def add_head(self, task):
+        self.heads[task] = nn.Linear(64, 1).to(str(self.dummy_param.device))
+
+    def freeze_model_layers(self):
+        for param in self.model.parameters():
+            param.requires_grad = False
+        self.model.training = False

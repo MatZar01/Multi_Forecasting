@@ -115,7 +115,7 @@ class Forecasting_Dataset(Dataset):
         batch = (self.stores_ids_lagged[idx].astype(int), self.sku_ids_lagged[idx].astype(int),
                  self.feature_vector_lagged[idx].astype(float), self.y_lag[idx].astype(float))
         batch = self.encode_cats(batch)
-        return batch[0], batch[1], torch.Tensor(batch[2]), torch.Tensor([batch[3]]), self.matches.astype(int)
+        return batch[0], batch[1], torch.Tensor(batch[2]), torch.Tensor([batch[3]]) #, self.matches.astype(int)
 
 
 def get_matches(path):
@@ -125,7 +125,7 @@ def get_matches(path):
     pairs = data[:, [2, 3]].astype(int)
     uq_pairs = np.unique(pairs, axis=0)
 
-    return uq_pairs
+    return uq_pairs.tolist()
 
 
 def get_dataloader(config, year, matches):

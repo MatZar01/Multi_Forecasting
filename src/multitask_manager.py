@@ -1,10 +1,15 @@
 from .dataset import get_matches, get_dataloader
+import torch
+from src import L_model
+import lightning as L
 
 
 class MultiTask_Manager:
     def __init__(self, config, grapher, logger, model_lib, loss_lib):
         self.config = config
         self.matches_all = get_matches(path=config['DATA_PATH'])
+        self.matches_used = []
+        self.current_task = None
 
         self.task_to_pair = {}
         self.pair_to_task = {}
@@ -27,3 +32,58 @@ class MultiTask_Manager:
         self.model = model_class(sample_input=data_info['sample_input'], store_size=data_info['store_size'],
                                  sku_size=data_info['sku_size'],
                                  embedding_dim=config['EMBEDDING_SIZE']).to(config['DEVICE'])
+
+    def add_task(self, task_number):
+        self.model.add_head(task_number)
+
+        if task_number == -1:
+            self.task_to_optimizer[task_number] = torch.optim.AdamW(self.model.parameters(), lr=self.config['LR_PRE'],
+                                                                    weight_decay=self.config['WEIGHT_DECAY'],
+                                                                    amsgrad=False)
+        else:
+            self.task_to_optimizer[task_number] = torch.optim.AdamW(self.model.parameters(), lr=self.config['LR_META'],
+                                                                    weight_decay=self.config['WEIGHT_DECAY'],
+                                                                    amsgrad=False)
+            if task_number not in self.task_to_pair.keys():
+                self.task_to_pair[task_number] = []
+                new_task = self.select_new_pair()
+                self.task_to_pair[task_number].append(new_task)
+                self.pair_to_task[new_task] = task_number
+
+                # select new dataloaders for task
+                self.select_dataloader(task_number)
+
+    def select_new_pair(self):
+        new_pair = self.matches_all.pop(0)
+        self.matches_used.append(new_pair)
+        return new_pair
+
+    def select_dataloader(self, task_number):
+        matches = self.task_to_pair[task_number]
+        self.train_dataloader, self.test_dataloader, data_info = get_dataloader(config=self.config,
+                                                                                year=self.config['YEARS']['META'],
+                                                                                matches=matches)
+
+    def fit(self, task):
+        # freeze feature extractor for all tasks except -1
+        if task != -1:
+            self.model.freeze_model_layers()
+            max_epochs = self.config['EPOCHS_META']
+        else:
+            max_epochs = self.config['EPOCHS_PRE']
+
+        # add task for training
+        self.add_task(task)
+
+        light_model = L_model(model=self.model, loss_fn=self.loss_fn, test_fn=self.test_fn,
+                              optimizer=self.task_to_optimizer[task], config=self.config, grapher=self.grapher,
+                              task=task)
+
+        light_trainer = L.Trainer(accelerator=self.config['DEVICE'], max_epochs=max_epochs,
+                                  limit_train_batches=500, limit_val_batches=400,
+                                  check_val_every_n_epoch=1, log_every_n_steps=1,
+                                  enable_progress_bar=True, enable_checkpointing=False,
+                                  logger=self.logger, num_sanity_val_steps=0)
+        # train model
+        light_trainer.fit(model=light_model, train_dataloaders=self.train_dataloader,
+                          val_dataloaders=self.test_dataloader)

@@ -11,6 +11,15 @@ class RMSELoss(torch.nn.Module):
         return torch.sqrt(self.mse(yhat, y))
 
 
+class MSE(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.loss = torch.nn.MSELoss()
+
+    def forward(self, yhat, y):
+        return self.loss(yhat, y)
+
+
 class MSLE(torch.nn.Module):
     def __init__(self):
         super().__init__()

@@ -92,7 +92,7 @@ class L_model(L.LightningModule):
         self.error_test = []
         self.loss_test = []
 
-        self.model_manager.save_model(model=self.model, current_error=self.best_error_test)
+        self.model_manager.save_model(model=self.model, current_error=self.best_error_test, task=self.task)
 
     def on_train_end(self):
         self.grapher.save_data()

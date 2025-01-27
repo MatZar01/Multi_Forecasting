@@ -1,11 +1,12 @@
 import torch
 from torch import nn
+from copy import deepcopy
 
 
 class MLP_base(nn.Module):
-    def __init__(self, sample_input, store_size, sku_size, embedding_dim):
+    def __init__(self, sample_input, store_size, sku_size, embedding_dim, device):
         super().__init__()
-        self.dummy_param = nn.Parameter(torch.empty(0))
+        self.device = device
 
         self.store_embedder = nn.Embedding(store_size, embedding_dim)
         self.sku_embedder = nn.Embedding(sku_size, embedding_dim)
@@ -15,15 +16,11 @@ class MLP_base(nn.Module):
                     sample_input[1].nelement() * embedding_dim
 
         self.model = nn.Sequential(
-            nn.Linear(input_dim, 512),
+            nn.Linear(input_dim, 128),
             nn.ReLU(),
-            nn.BatchNorm1d(512),
+            nn.BatchNorm1d(128),
             nn.Dropout(0.5),
-            nn.Linear(512, 512),
-            nn.ReLU(),
-            nn.BatchNorm1d(512),
-            nn.Dropout(0.5),
-            nn.Linear(512, 256),
+            nn.Linear(128, 256),
             nn.ReLU(),
             nn.BatchNorm1d(256),
             nn.Dropout(0.5),
@@ -48,9 +45,15 @@ class MLP_base(nn.Module):
         return logits
 
     def add_head(self, task):
-        self.heads[task] = nn.Linear(64, 1).to(str(self.dummy_param.device))
+        if task == -1:
+            self.heads[task] = nn.Linear(64, 1).to(self.device)
+        else:
+            new_head = deepcopy(self.heads[-1])
+            self.heads[task] = new_head
 
     def freeze_model_layers(self):
         for param in self.model.parameters():
             param.requires_grad = False
         self.model.training = False
+        self.sku_embedder.requires_grad = False
+        self.store_embedder.requires_grad = False

@@ -8,12 +8,12 @@ class Model_Manager:
         self.save_path = save_path
         self.last_best_error = np.inf
 
-    def save_model(self, model, current_error):
+    def save_model(self, model, current_error, task):
         # add prefix to model
-        if model.meta_phase:
-            name = 'meta'
-        else:
+        if task == -1:
             name = 'pre'
+        else:
+            name = f'T_{task}'
 
         model_cp = deepcopy(model)
         model_cp = model_cp.to('cpu')

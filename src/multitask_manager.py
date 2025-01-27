@@ -31,7 +31,8 @@ class MultiTask_Manager:
         model_class = getattr(model_lib, config['MODEL'])
         self.model = model_class(sample_input=data_info['sample_input'], store_size=data_info['store_size'],
                                  sku_size=data_info['sku_size'],
-                                 embedding_dim=config['EMBEDDING_SIZE']).to(config['DEVICE'])
+                                 embedding_dim=config['EMBEDDING_SIZE'],
+                                 device=config['DEVICE']).to(config['DEVICE'])
 
     def add_task(self, task_number):
         self.model.add_head(task_number)
@@ -48,7 +49,7 @@ class MultiTask_Manager:
                 self.task_to_pair[task_number] = []
                 new_task = self.select_new_pair()
                 self.task_to_pair[task_number].append(new_task)
-                self.pair_to_task[new_task] = task_number
+                self.pair_to_task[f'{new_task}'] = task_number
 
                 # select new dataloaders for task
                 self.select_dataloader(task_number)

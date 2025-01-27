@@ -10,12 +10,12 @@ config = {
     'YEARS': {'TRAIN': 1, 'META': 2, 'TEST': 3},
 
     'MODEL': 'MLP_base',
-    'EMBEDDING_SIZE': 5,
+    'EMBEDDING_SIZE': 3,
 
     'EPOCHS_PRE': 10,
-    'EPOCHS_META': 30,
+    'EPOCHS_META': 60,
 
-    'LR_PRE': 1e-3,
+    'LR_PRE': 1e-2,
     'LR_META': 1e-3,
 
     'WEIGHT_DECAY': 0.04,
@@ -25,5 +25,5 @@ config = {
     'LOSS_FN': 'RMSELoss',
 
     'SCHEDULER_PRE': {'FACTOR': 0.6, 'PATIENCE': 2, 'THRESHOLD': 1e-3},
-    'SCHEDULER_META': {'FACTOR': 0.4, 'PATIENCE': 2, 'THRESHOLD': 1e-3}
+    'SCHEDULER_META': {'FACTOR': 0.8, 'PATIENCE': 10, 'THRESHOLD': 1e-3}
 }

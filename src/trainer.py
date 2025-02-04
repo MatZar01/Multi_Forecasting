@@ -15,6 +15,13 @@ class L_model(L.LightningModule):
         self.grapher = grapher
         self.task = task
 
+        self.grapher.error_train[task] = []
+        self.grapher.error_test[task] = []
+        self.grapher.loss_train[task] = []
+        self.grapher.loss_test[task] = []
+        self.grapher.lr[task] = []
+        self.grapher.add_task_folder(task)
+
         self.model_manager = Model_Manager(save_path=grapher.checkpoint_path)
 
         if self.task != -1:
@@ -69,13 +76,13 @@ class L_model(L.LightningModule):
         if train_error < self.best_error_train:
             self.best_error_train = train_error
 
-        self.grapher.error_train.append(train_error)
-        self.grapher.loss_train.append(train_loss)
+        self.grapher.error_train[self.task].append(train_error)
+        self.grapher.loss_train[self.task].append(train_loss)
 
         self.error_train = []
         self.loss_train = []
 
-        self.grapher.save_data()
+        self.grapher.save_data(task=self.task)
 
     def on_validation_epoch_end(self):
         test_error = np.nanmean(self.error_test).item()
@@ -83,9 +90,9 @@ class L_model(L.LightningModule):
         if test_error < self.best_error_test:
             self.best_error_test = test_error
 
-        self.grapher.error_test.append(test_error)
-        self.grapher.loss_test.append(test_loss)
-        self.grapher.lr.append(self.optimizer.param_groups[0]["lr"])
+        self.grapher.error_test[self.task].append(test_error)
+        self.grapher.loss_test[self.task].append(test_loss)
+        self.grapher.lr[self.task].append(self.optimizer.param_groups[0]["lr"])
 
         self.scheduler.step(metrics=test_error)
 
@@ -95,5 +102,5 @@ class L_model(L.LightningModule):
         self.model_manager.save_model(model=self.model, current_error=self.best_error_test, task=self.task)
 
     def on_train_end(self):
-        self.grapher.save_data()
+        self.grapher.save_data(task=self.task)
         print(f'[INFO] TRAINING END\nTrain error: {self.best_error_train}\nVal error: {self.best_error_test}')

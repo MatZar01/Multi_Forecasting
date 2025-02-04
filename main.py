@@ -26,6 +26,7 @@ if __name__ == '__main__':
                                           loss_lib=loss_lib)
 
     multitask_manager.fit(task=-1)
-    multitask_manager.fit(task=2)
+    for i in range(len(multitask_manager.matches_all)):
+        multitask_manager.fit(task=i)
 
     print('[INFO] DONE!')

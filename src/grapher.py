@@ -15,11 +15,11 @@ class Grapher:
         self.time_name = None
         self.path, self.checkpoint_path = self.__set_path(base_pt=config['LOG_DIR'])
 
-        self.error_train = []
-        self.error_test = []
-        self.loss_train = []
-        self.loss_test = []
-        self.lr = []
+        self.error_train = {}
+        self.error_test = {}
+        self.loss_train = {}
+        self.loss_test = {}
+        self.lr = {}
 
     def __set_path(self, base_pt: str):
         date = datetime.now()
@@ -35,39 +35,55 @@ class Grapher:
         if not os.path.exists(f'{self.path}/{task}'):
             os.makedirs(f'{self.path}/{task}')
 
-    def save_yaml(self):
-        out_dict = {'epoch_num': len(self.error_train),
+    def select_data(self, task):
+        if task == -1:
+            return self.error_train[task], self.error_test[task], self.loss_train[task], \
+                   self.loss_test[task], self.lr[task]
+        else:
+            error_train = self.error_train[-1] + self.error_train[task]
+            error_test = self.error_test[-1] + self.loss_test[task]
+            loss_train = self.loss_train[-1] + self.loss_train[task]
+            loss_test = self.loss_test[-1] + self.loss_test[task]
+            lr = self.lr[-1] + self.lr[task]
+            return error_train, error_test, loss_train, loss_test, lr
+
+    def save_yaml(self, task):
+        error_train, error_test, loss_train, loss_test, lr = self.select_data(task)
+
+        out_dict = {'epoch_num': len(error_train),
                     'lr': self.lr,
-                    'train': {'loss': self.loss_train, 'error': self.error_train},
-                    'test': {'loss': self.loss_test, 'error': self.error_test},
-                    'best': {'train_loss': np.nanmin(self.loss_train).item(),
-                             'train_error': np.nanmin(self.error_train).item(),
-                             'test_loss': np.nanmin(self.loss_test).item(),
-                             'test_error': np.nanmin(self.error_test).item()}}
+                    'train': {'loss': loss_train, 'error': error_train},
+                    'test': {'loss': loss_test, 'error': error_test},
+                    'best': {'train_loss': np.nanmin(loss_train).item(),
+                             'train_error': np.nanmin(error_train).item(),
+                             'test_loss': np.nanmin(loss_test).item(),
+                             'test_error': np.nanmin(error_test).item()}}
 
         config_copy = deepcopy(self.config)
         config_copy.update(out_dict)
-        yaml.dump(config_copy, open(f'{self.path}/results.yml', 'w'))
+        yaml.dump(config_copy, open(f'{self.path}/{task}/results.yml', 'w'))
 
-    def save_graphs(self):
+    def save_graphs(self, task):
+        error_train, error_test, loss_train, loss_test, lr = self.select_data(task)
+
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(18, 6))
 
         fig.suptitle(f'{self.config["MODEL"]} Results')
-        ax1.plot(list(range(len(self.error_train))), self.error_train, label='Train error')
-        ax1.plot([np.argmin(self.error_train)], [np.min(self.error_train)], 'ro')
-        ax1.plot(list(range(len(self.error_test))), self.error_test, label='Test error')
-        ax1.plot([np.argmin(self.error_test)], [np.min(self.error_test)], 'ro')
+        ax1.plot(list(range(len(error_train))), error_train, label='Train error')
+        ax1.plot([np.argmin(error_train)], [np.min(error_train)], 'ro')
+        ax1.plot(list(range(len(error_test))), error_test, label='Test error')
+        ax1.plot([np.argmin(error_test)], [np.min(error_test)], 'ro')
         ax1.set_title(f'Error: {self.config["TEST_FN"]}')
         ax1.set(xlabel='Epoch', ylabel='Error')
         ax1.axvline(self.config['EPOCHS_PRE'])
         ax1.grid()
 
-        ax1.text(len(self.error_test)/3, np.max(self.error_test)*0.9,
-                 f'Error min:\nTrain: {np.min(self.error_train):.4f}\nTest: {np.min(self.error_test):.4f}', color='black',
+        ax1.text(len(error_test)/3, np.max(error_test)*0.9,
+                 f'Error min:\nTrain: {np.min(error_train):.4f}\nTest: {np.min(error_test):.4f}', color='black',
                  bbox=dict(facecolor='none', edgecolor='black', boxstyle='square,pad=1'))
 
         ax1_lr = ax1.twinx()
-        ax1_lr.plot(list(range(len(self.lr))), self.lr, label='LR', color='c', linestyle='dashed')
+        ax1_lr.plot(list(range(len(lr))), lr, label='LR', color='c', linestyle='dashed')
         ax1_lr.grid(color='c', linestyle='dashed')
         ax1_lr.tick_params(colors='c')
 
@@ -77,22 +93,22 @@ class Grapher:
         labels_a = labels1 + labels2
         plt.legend(lines_a, labels_a, loc='upper right')
 
-        ax2.plot(list(range(len(self.loss_train))), self.loss_train, label='Train loss')
-        ax2.plot([np.argmin(self.loss_train)], [np.min(self.loss_train)], 'ro')
-        ax2.plot(list(range(len(self.loss_test))), self.loss_test, label='Test loss')
-        ax2.plot([np.argmin(self.loss_test)], [np.min(self.loss_test)], 'ro')
+        ax2.plot(list(range(len(loss_train))), loss_train, label='Train loss')
+        ax2.plot([np.argmin(loss_train)], [np.min(loss_train)], 'ro')
+        ax2.plot(list(range(len(loss_test))), loss_test, label='Test loss')
+        ax2.plot([np.argmin(loss_test)], [np.min(loss_test)], 'ro')
         ax2.set_title(f'Loss: {self.config["LOSS_FN"]}')
         ax2.set(xlabel='Epoch', ylabel='Loss')
         ax2.axvline(self.config['EPOCHS_PRE'])
         ax2.grid()
 
-        ax2.text(len(self.loss_test) / 3, np.max(self.loss_test) * 0.9,
-                 f'Error min:\nTrain: {np.min(self.loss_train):.4f}\nTest: {np.min(self.loss_test):.4f}',
+        ax2.text(len(loss_test) / 3, np.max(loss_test) * 0.9,
+                 f'Error min:\nTrain: {np.min(loss_train):.4f}\nTest: {np.min(loss_test):.4f}',
                  color='black',
                  bbox=dict(facecolor='none', edgecolor='black', boxstyle='square,pad=1'))
 
         ax2_lr = ax2.twinx()
-        ax2_lr.plot(list(range(len(self.lr))), self.lr, label='LR', color='c', linestyle='dashed')
+        ax2_lr.plot(list(range(len(lr))), lr, label='LR', color='c', linestyle='dashed')
         ax2_lr.grid(color='c', linestyle='dashed')
         ax2_lr.tick_params(colors='c')
 
@@ -102,10 +118,10 @@ class Grapher:
         labels_b = labels3 + labels4
         plt.legend(lines_b, labels_b, loc='upper right')
 
-        plt.savefig(f'{self.path}/result_graph.png')
+        plt.savefig(f'{self.path}/{task}/result_graph.png')
         plt.clf()
         plt.close()
 
-    def save_data(self):
-        self.save_yaml()
-        self.save_graphs()
+    def save_data(self, task):
+        self.save_yaml(task=task)
+        self.save_graphs(task=task)

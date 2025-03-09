@@ -2,12 +2,14 @@ from .dataset import get_matches, get_dataloader
 import torch
 from src import L_model
 import lightning as L
+import numpy as np
 
 
 class MultiTask_Manager:
     def __init__(self, config, grapher, logger, model_lib, loss_lib):
         self.config = config
         self.matches_all = get_matches(path=config['DATA_PATH'])
+        self.matches_left = get_matches(path=config['DATA_PATH'])
         self.matches_used = []
         self.current_task = None
 
@@ -34,7 +36,7 @@ class MultiTask_Manager:
                                  embedding_dim=config['EMBEDDING_SIZE'],
                                  device=config['DEVICE']).to(config['DEVICE'])
 
-    def add_task(self, task_number):
+    def add_simple_task(self, task_number):
         self.model.add_head(task_number)
 
         if task_number == -1:
@@ -47,9 +49,9 @@ class MultiTask_Manager:
                                                                     amsgrad=False)
             if task_number not in self.task_to_pair.keys():
                 self.task_to_pair[task_number] = []
-                new_task = self.select_new_pair()
-                self.task_to_pair[task_number].append(new_task)
-                self.pair_to_task[f'{new_task}'] = task_number
+                new_pair = self.select_new_pair()
+                self.task_to_pair[task_number].append(new_pair)
+                self.pair_to_task[f'{new_pair}'] = task_number
 
                 # select new dataloaders for task
                 self.select_dataloader(task_number)
@@ -59,13 +61,29 @@ class MultiTask_Manager:
         self.matches_used.append(new_pair)
         return new_pair
 
+    def add_random_pairs_to_tasks(self, pairs):
+        task_number = 0
+        for pair in pairs:
+            self.task_to_pair[task_number] = []
+            self.task_to_pair[task_number].append(pair)
+            self.pair_to_task[f'{pair}'] = task_number
+            self.matches_used.append(pair)
+            self.matches_left.pop(self.matches_all.index(pair))
+            task_number += 1
+
+    def select_random_pairs(self, number, seed):
+        np.random.seed(seed)
+        random_ids = np.random.choice(list(range(len(self.matches_all))), size=number, replace=False)
+        random_pairs = [self.matches_all[x] for x in random_ids]
+        return random_pairs
+
     def select_dataloader(self, task_number):
         matches = self.task_to_pair[task_number]
         self.train_dataloader, self.test_dataloader, data_info = get_dataloader(config=self.config,
                                                                                 year=self.config['YEARS']['META'],
                                                                                 matches=matches)
 
-    def fit(self, task):
+    def fit_simple(self, task):
         # freeze feature extractor for all tasks except -1
         if task != -1:
             self.model.freeze_model_layers()
@@ -74,7 +92,7 @@ class MultiTask_Manager:
             max_epochs = self.config['EPOCHS_PRE']
 
         # add task for training
-        self.add_task(task)
+        self.add_simple_task(task)
 
         light_model = L_model(model=self.model, loss_fn=self.loss_fn, test_fn=self.test_fn,
                               optimizer=self.task_to_optimizer[task], config=self.config, grapher=self.grapher,

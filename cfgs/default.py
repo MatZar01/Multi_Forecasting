@@ -5,6 +5,9 @@ config = {
                          'C3': 'embedders/onehot_C3.pkl'},
     'LOG_DIR': 'log_dir',
 
+    'SEED': 24,
+    'RANDOM_PAIR_NUM': 20,
+
     'LAG': 15,
     'COLUMNS': [],  # [4, 5, 6, 7] for full feature vector
     'YEARS': {'TRAIN': 1, 'META': 2, 'TEST': 3},

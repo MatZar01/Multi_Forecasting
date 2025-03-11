@@ -21,6 +21,8 @@ class Grapher:
         self.loss_test = {}
         self.lr = {}
 
+        self.overall_results = {}
+
     def __set_path(self, base_pt: str):
         date = datetime.now()
         DIR = f'{date.year}-{date.month}-{date.day}+{date.hour}+{date.minute}_{self.config["MODEL"]}'
@@ -62,6 +64,7 @@ class Grapher:
         config_copy = deepcopy(self.config)
         config_copy.update(out_dict)
         yaml.dump(config_copy, open(f'{self.path}/{task}/results.yml', 'w'))
+        self.overall_results[task] = out_dict
 
     def save_graphs(self, task):
         error_train, error_test, loss_train, loss_test, lr = self.select_data(task)
@@ -125,3 +128,24 @@ class Grapher:
     def save_data(self, task):
         self.save_yaml(task=task)
         self.save_graphs(task=task)
+
+    def save_metadata(self, multitask_manager):
+        task_to_pair = multitask_manager.task_to_pair
+        results = {}
+        n_pairs = []
+        best_train = []
+        best_test = []
+        for key in self.overall_results.keys():
+            results[key] = {'n_pairs': len(task_to_pair[key]),
+                            'best_train': self.overall_results[key]['best']['train_error'],
+                            'best_test': self.overall_results[key]['best']['test_error']}
+            if key != -1:
+                n_pairs.append(len(task_to_pair[key]))
+                best_train.append(self.overall_results[key]['best']['train_error'])
+                best_test.append(self.overall_results[key]['best']['test_error'])
+
+        results['overall'] = {'train': np.sum(np.array(n_pairs) * np.array(best_train)) / np.sum(n_pairs),
+                              'test': np.sum(np.array(n_pairs) * np.array(best_test)) / np.sum(best_test)}
+
+        task_to_pair.update(results)
+        yaml.dump(task_to_pair, open(f'{self.path}/metadata.yml', 'w'))

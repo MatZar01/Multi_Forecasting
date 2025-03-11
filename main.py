@@ -2,6 +2,7 @@ import numpy as np
 import torch
 import lightning as L
 import importlib
+import warnings
 
 from src import get_args
 from src import get_matches, get_dataloader
@@ -12,6 +13,7 @@ from tqdm import tqdm
 
 
 if __name__ == '__main__':
+    warnings.filterwarnings('ignore')
     # get training config
     config = get_args()
     # load grapher and logger
@@ -45,4 +47,5 @@ if __name__ == '__main__':
     for t in multitask_manager.task_to_pair.keys():
         multitask_manager.fit_simple(task=t)
 
+    grapher.save_metadata(multitask_manager)
     print('[INFO] DONE!')

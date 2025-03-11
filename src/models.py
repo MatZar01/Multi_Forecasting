@@ -30,7 +30,7 @@ class MLP_base(nn.Module):
             nn.Dropout(0.5)
         )
 
-        self.heads = {}
+        self.heads = nn.ModuleDict()
 
     def forward(self, store_in, sku_in, feature_vector, task):
         store_embedding = self.store_embedder(store_in)
@@ -40,16 +40,16 @@ class MLP_base(nn.Module):
 
         features = self.model(concatenated)
 
-        logits = self.heads[task](features)
+        logits = self.heads[str(task)](features)
 
         return logits
 
     def add_head(self, task):
         if task == -1:
-            self.heads[task] = nn.Linear(64, 1).to(self.device)
+            self.heads[str(task)] = nn.Linear(64, 1).to(self.device)
         else:
-            new_head = deepcopy(self.heads[-1])
-            self.heads[task] = new_head
+            new_head = deepcopy(self.heads[str(-1)])
+            self.heads[str(task)] = new_head
 
     def freeze_model_layers(self):
         for param in self.model.parameters():

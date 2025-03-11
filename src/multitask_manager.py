@@ -26,7 +26,7 @@ class MultiTask_Manager:
         self.test_fn = test_class()
 
         # initial dataloader for -1 task
-        self.train_dataloader, self.test_dataloader, data_info = get_dataloader(config=config,
+        self.train_dataloader, self.test_dataloader, data_info, train_data, test_data = get_dataloader(config=config,
                                                                                 year=config['YEARS']['TRAIN'],
                                                                                 matches=None)
 
@@ -53,8 +53,8 @@ class MultiTask_Manager:
                 self.task_to_pair[task_number].append(new_pair)
                 self.pair_to_task[f'{new_pair}'] = task_number
 
-                # select new dataloaders for task
-                self.select_dataloader(task_number)
+            # select new dataloaders for task
+            self.select_dataloader(task_number)
 
     def select_new_pair(self):
         new_pair = self.matches_all.pop(0)
@@ -79,11 +79,41 @@ class MultiTask_Manager:
 
     def select_dataloader(self, task_number):
         matches = self.task_to_pair[task_number]
-        self.train_dataloader, self.test_dataloader, data_info = get_dataloader(config=self.config,
+        self.train_dataloader, self.test_dataloader, data_info, train_data, test_data = get_dataloader(config=self.config,
                                                                                 year=self.config['YEARS']['META'],
                                                                                 matches=matches)
 
+    def test_pair(self, pair):
+        self.model.eval()
+        self.model.to(self.config['DEVICE'])
+        out_scores = []
+        for t in self.task_to_pair.keys():
+            self.train_dataloader, self.test_dataloader, data_info, train_data, test_data = get_dataloader(config=self.config,
+                                                                                    year=self.config['YEARS']['META'],
+                                                                                    matches=[pair])
+            errors = []
+            for i in range(test_data.y_lag.size):
+                store_id, sku_id, vector, y = test_data.__getitem__(i)
+                store_id = store_id.unsqueeze(0).to(self.config['DEVICE'])
+                sku_id = sku_id.unsqueeze(0).to(self.config['DEVICE'])
+                vector = vector.unsqueeze(0).to(self.config['DEVICE'])
+                y = y.unsqueeze(0).to(self.config['DEVICE'])
+                result = self.model(store_id, sku_id, vector, t)
+                errors.append(self.test_fn(result, y).detach().cpu().numpy().item())
+            out_scores.append(np.mean(errors))
+
+        return out_scores
+
+    def add_pair_to_task(self, pair):
+        out_scores = self.test_pair(pair)
+        task_assignment = np.argmin(out_scores)
+        self.task_to_pair[task_assignment].append(pair)
+        self.pair_to_task[f'{pair}'] = task_assignment
+        self.matches_used.append(pair)
+        self.matches_left.remove(pair)
+
     def fit_simple(self, task):
+        self.model.train()
         # freeze feature extractor for all tasks except -1
         if task != -1:
             self.model.freeze_model_layers()

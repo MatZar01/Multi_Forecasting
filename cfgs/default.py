@@ -27,6 +27,6 @@ config = {
     'TEST_FN': 'RMSELoss',
     'LOSS_FN': 'RMSELoss',
 
-    'SCHEDULER_PRE': {'FACTOR': 0.6, 'PATIENCE': 5, 'THRESHOLD': 1e-3},
+    'SCHEDULER_PRE': {'FACTOR': 0.6, 'PATIENCE': 20, 'THRESHOLD': 1e-3},
     'SCHEDULER_META': {'FACTOR': 0.8, 'PATIENCE': 10, 'THRESHOLD': 1e-3}
 }

@@ -143,4 +143,4 @@ def get_dataloader(config, year, matches):
     data_info = {'sample_input': train_data.batch_sample, 'store_size': train_data.emb_2_size,
                  'sku_size': train_data.emb_3_size}
 
-    return train_dataloader, test_dataloader, data_info
+    return train_dataloader, test_dataloader, data_info, train_data, test_data

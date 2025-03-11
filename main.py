@@ -8,6 +8,7 @@ from src import get_matches, get_dataloader
 from src import L_model
 from src import Grapher
 from src import MultiTask_Manager
+from tqdm import tqdm
 
 
 if __name__ == '__main__':
@@ -28,8 +29,20 @@ if __name__ == '__main__':
     random_pairs = multitask_manager.select_random_pairs(number=config['RANDOM_PAIR_NUM'], seed=config['SEED'])
     multitask_manager.add_random_pairs_to_tasks(random_pairs)
 
-    '''multitask_manager.fit(task=-1)
-    for i in range(len(multitask_manager.matches_all)):
-        multitask_manager.fit(task=i)'''
+    # pre train
+    multitask_manager.fit_simple(task=-1)
+
+    # train selected random pairs
+    for t in multitask_manager.task_to_pair.keys():
+        multitask_manager.fit_simple(task=t)
+
+    # group the rest of the pairs
+    print('[INFO] GROUPING PAIRS')
+    for pair in tqdm(multitask_manager.matches_left):
+        multitask_manager.add_pair_to_task(pair)
+
+    # train groups
+    for t in multitask_manager.task_to_pair.keys():
+        multitask_manager.fit_simple(task=t)
 
     print('[INFO] DONE!')

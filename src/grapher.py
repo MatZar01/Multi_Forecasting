@@ -63,8 +63,7 @@ class Grapher:
 
         config_copy = deepcopy(self.config)
         config_copy.update(out_dict)
-        path = check_existing_path(f'{self.path}/{task}/results.yml')
-        yaml.dump(config_copy, open(path, 'w'))
+        yaml.dump(config_copy, open(f'{self.path}/{task}/results.yml', 'w'))
         self.overall_results[task] = out_dict
 
     def save_graphs(self, task):
@@ -122,8 +121,7 @@ class Grapher:
         labels_b = labels3 + labels4
         plt.legend(lines_b, labels_b, loc='upper right')
 
-        path = check_existing_path(f'{self.path}/{task}/result_graph.png')
-        plt.savefig(path)
+        plt.savefig(f'{self.path}/{task}/result_graph.png')
         plt.clf()
         plt.close()
 
@@ -151,11 +149,3 @@ class Grapher:
 
         task_to_pair.update(results)
         yaml.dump(task_to_pair, open(f'{self.path}/metadata.yml', 'w'))
-
-
-def check_existing_path(path):
-    if os.path.isfile(path):
-        path = path[:-4] + '_1' + path[-4:]
-        return path
-    else:
-        return path

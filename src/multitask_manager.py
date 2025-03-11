@@ -91,16 +91,26 @@ class MultiTask_Manager:
             self.train_dataloader, self.test_dataloader, data_info, train_data, test_data = get_dataloader(config=self.config,
                                                                                     year=self.config['YEARS']['META'],
                                                                                     matches=[pair])
-            errors = []
+            store_ids = []
+            store_skus = []
+            vectors = []
+            ys = []
             for i in range(test_data.y_lag.size):
                 store_id, sku_id, vector, y = test_data.__getitem__(i)
                 store_id = store_id.unsqueeze(0).to(self.config['DEVICE'])
                 sku_id = sku_id.unsqueeze(0).to(self.config['DEVICE'])
                 vector = vector.unsqueeze(0).to(self.config['DEVICE'])
                 y = y.unsqueeze(0).to(self.config['DEVICE'])
-                result = self.model(store_id, sku_id, vector, t)
-                errors.append(self.test_fn(result, y).detach().cpu().numpy().item())
-            out_scores.append(np.mean(errors))
+                store_ids.append(store_id)
+                store_skus.append(sku_id)
+                vectors.append(vector)
+                ys.append(y)
+            ids = torch.concatenate(store_ids)
+            skus = torch.concatenate(store_skus)
+            vector_ts = torch.concatenate(vectors)
+            y_hats = torch.concatenate(ys)
+            result = self.model(ids, skus, vector_ts, t)
+            out_scores.append(self.test_fn(result, y_hats).detach().cpu().numpy().item())
 
         return out_scores
 

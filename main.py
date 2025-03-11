@@ -40,8 +40,9 @@ if __name__ == '__main__':
 
     # group the rest of the pairs
     print('[INFO] GROUPING PAIRS')
-    for pair in tqdm(multitask_manager.matches_left):
-        multitask_manager.add_pair_to_task(pair)
+    matches_left_num = len(multitask_manager.matches_left)
+    for i in tqdm(range(matches_left_num)):
+        multitask_manager.add_pair_to_task(multitask_manager.matches_left[0])
 
     # train groups
     for t in multitask_manager.task_to_pair.keys():

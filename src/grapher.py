@@ -136,16 +136,17 @@ class Grapher:
         best_train = []
         best_test = []
         for key in self.overall_results.keys():
-            results[key] = {'n_pairs': len(task_to_pair[key]),
-                            'best_train': self.overall_results[key]['best']['train_error'],
-                            'best_test': self.overall_results[key]['best']['test_error']}
             if key != -1:
+                results[key] = {'n_pairs': len(task_to_pair[key]),
+                                'best_train': self.overall_results[key]['best']['train_error'],
+                                'best_test': self.overall_results[key]['best']['test_error']}
+
                 n_pairs.append(len(task_to_pair[key]))
                 best_train.append(self.overall_results[key]['best']['train_error'])
                 best_test.append(self.overall_results[key]['best']['test_error'])
 
-        results['overall'] = {'train': np.sum(np.array(n_pairs) * np.array(best_train)) / np.sum(n_pairs),
-                              'test': np.sum(np.array(n_pairs) * np.array(best_test)) / np.sum(best_test)}
+        results['overall'] = {'train': (np.sum(np.array(n_pairs) * np.array(best_train)) / np.sum(n_pairs)).item(),
+                              'test': (np.sum(np.array(n_pairs) * np.array(best_test)) / np.sum(n_pairs)).item()}
 
         task_to_pair.update(results)
         yaml.dump(task_to_pair, open(f'{self.path}/metadata.yml', 'w'))

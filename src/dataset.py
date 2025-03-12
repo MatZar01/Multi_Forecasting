@@ -136,9 +136,9 @@ def get_dataloader(config, year, matches):
 
     # get dataloaders
     train_dataloader = DataLoader(train_data, batch_size=config['BATCH_SIZE'], shuffle=True, num_workers=15,
-                                  persistent_workers=True)
+                                  persistent_workers=True, drop_last=True)
     test_dataloader = DataLoader(test_data, batch_size=config['BATCH_SIZE'], shuffle=False, num_workers=15,
-                                 persistent_workers=True)
+                                 persistent_workers=True, drop_last=True)
 
     data_info = {'sample_input': train_data.batch_sample, 'store_size': train_data.emb_2_size,
                  'sku_size': train_data.emb_3_size}

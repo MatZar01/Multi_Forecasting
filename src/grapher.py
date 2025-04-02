@@ -125,6 +125,23 @@ class Grapher:
         plt.clf()
         plt.close()
 
+    def save_mean_std_plot(self, means, stds):
+        plt.plot(list(range(len(means))), means)
+        plt.title('Mean scores')
+        plt.grid()
+        plt.xlabel('Pair count')
+        plt.ylabel('Mean RMSE')
+        plt.savefig(f'{self.path}/means.png')
+        plt.clf()
+
+        plt.plot(list(range(len(stds))), stds)
+        plt.title('Mean stds')
+        plt.grid()
+        plt.xlabel('Pair count')
+        plt.ylabel('Mean STD')
+        plt.savefig(f'{self.path}/stds.png')
+        plt.clf()
+
     def save_data(self, task):
         self.save_yaml(task=task)
         self.save_graphs(task=task)

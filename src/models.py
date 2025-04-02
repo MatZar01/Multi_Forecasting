@@ -48,8 +48,9 @@ class MLP_base(nn.Module):
         if task == -1:
             self.heads[str(task)] = nn.Linear(64, 1).to(self.device)
         else:
-            new_head = deepcopy(self.heads[str(-1)])
-            self.heads[str(task)] = new_head
+            if str(task) not in self.heads.keys():
+                new_head = deepcopy(self.heads[str(-1)])
+                self.heads[str(task)] = new_head
 
     def freeze_model_layers(self):
         for param in self.model.parameters():

@@ -57,7 +57,7 @@ class MultiTask_Manager:
             self.select_dataloader(task_number)
 
     def select_new_pair(self):
-        new_pair = self.matches_all.pop(0)
+        new_pair = self.matches_left.pop(0)
         self.matches_used.append(new_pair)
         return new_pair
 
@@ -114,13 +114,17 @@ class MultiTask_Manager:
 
         return out_scores
 
-    def add_pair_to_task(self, pair):
+    def add_test_pair_to_task(self, pair):
         out_scores = self.test_pair(pair)
         task_assignment = np.argmin(out_scores)
         self.task_to_pair[task_assignment].append(pair)
         self.pair_to_task[f'{pair}'] = task_assignment
         self.matches_used.append(pair)
         self.matches_left.remove(pair)
+
+    def add_pair_to_task(self, task, pair):
+        self.task_to_pair[task].append(pair)
+        self.pair_to_task[f'{pair}'] = task
 
     def fit_simple(self, task):
         self.model.train()

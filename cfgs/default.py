@@ -15,8 +15,8 @@ config = {
     'MODEL': 'MLP_base',
     'EMBEDDING_SIZE': 3,
 
-    'EPOCHS_PRE': 100,
-    'EPOCHS_META': 60,
+    'EPOCHS_PRE': 1, # 100,
+    'EPOCHS_META': 2, # 60,
 
     'LR_PRE': 1e-2,
     'LR_META': 1e-3,
@@ -25,7 +25,7 @@ config = {
     'BATCH_SIZE': 10,
 
     'TEST_FN': 'RMSELoss',
-    'LOSS_FN': 'RMSELoss',
+    'LOSS_FN': 'MSE',
 
     'SCHEDULER_PRE': {'FACTOR': 0.6, 'PATIENCE': 20, 'THRESHOLD': 1e-3},
     'SCHEDULER_META': {'FACTOR': 0.8, 'PATIENCE': 10, 'THRESHOLD': 1e-3}

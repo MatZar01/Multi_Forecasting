@@ -95,7 +95,9 @@ class MultiTask_Manager:
             store_skus = []
             vectors = []
             ys = []
-            for i in range(test_data.y_lag.size):
+            test_range = np.min([test_data.y_lag.size, 200])
+            test_samples = np.random.choice(list(range(test_data.y_lag.size)), size=test_range, replace=False)
+            for i in test_samples:
                 store_id, sku_id, vector, y = test_data.__getitem__(i)
                 store_id = store_id.unsqueeze(0).to(self.config['DEVICE'])
                 sku_id = sku_id.unsqueeze(0).to(self.config['DEVICE'])

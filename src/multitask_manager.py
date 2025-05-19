@@ -84,6 +84,7 @@ class MultiTask_Manager:
                                                                                 matches=matches)
 
     def test_pair(self, pair):
+        print('[INFO] testing model...')
         self.model.eval()
         self.model.to(self.config['DEVICE'])
         out_scores = []
@@ -95,8 +96,8 @@ class MultiTask_Manager:
             store_skus = []
             vectors = []
             ys = []
-            test_range = np.min([test_data.y_lag.size, 200])
-            test_samples = np.random.choice(list(range(test_data.y_lag.size)), size=test_range, replace=False)
+            test_range = np.min([len(test_data.x_y_lagged), 200])
+            test_samples = np.random.choice(list(range(len(test_data.x_y_lagged))), size=test_range, replace=False)
             for i in test_samples:
                 store_id, sku_id, vector, y = test_data.__getitem__(i)
                 store_id = store_id.unsqueeze(0).to(self.config['DEVICE'])

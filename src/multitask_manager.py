@@ -89,7 +89,7 @@ class MultiTask_Manager:
         out_scores = []
         for t in self.task_to_pair.keys():
             self.train_dataloader, self.test_dataloader, data_info, train_data, test_data = get_dataloader(config=self.config,
-                                                                                    year=self.config['YEARS']['META'],
+                                                                                    year=self.config['YEARS']['TEST'],
                                                                                     matches=[pair])
             store_ids = []
             store_skus = []

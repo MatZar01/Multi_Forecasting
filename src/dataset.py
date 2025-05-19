@@ -9,6 +9,7 @@ from torch.utils.data import DataLoader
 class Forecasting_Dataset(Dataset):
     def __init__(self, path: str, year: int, lag: int, columns: list, matches: np.ndarray | None,
                  onehot_paths: dict):
+        self.matches_all = get_matches(path=path)
         self.path = path
         self.year = year
         self.lag = lag
@@ -24,12 +25,12 @@ class Forecasting_Dataset(Dataset):
         self.data_all = self.split_to_years(self.data)
 
         if self.matches is not None:
-            self.data_all = self.get_match()
+            self.data_all = self.get_match(self.matches)
         else:
-            self.matches = np.array([])
+            self.data_all = self.get_match(self.matches_all)
 
-        self.stores_ids, self.sku_ids, self.feature_vector, self.y = self.get_x_y()
-        self.stores_ids_lagged, self.sku_ids_lagged, self.feature_vector_lagged, self.y_lag = self.get_lagged_data(self.stores_ids, self.sku_ids, self.feature_vector, self.y, self.lag)
+        self.x_y = self.get_x_y()
+        self.x_y_lagged = self.get_lagged_data(self.x_y)
 
         self.batch_sample = self.__getitem__(0)
 
@@ -47,33 +48,34 @@ class Forecasting_Dataset(Dataset):
         data['units_norm'] = units_norm
         return data
 
-    def get_lagged_data(self, stores_ids, sku_ids, feature_vector, y, lag):
-        stores_ids_lagged = []
-        sku_ids_lagged = []
-        feature_vector_lagged = []
-        y_lagged = []
-        for i in range(feature_vector.shape[0] - (lag - 1) - 1):
-            stores_ids_lagged.append(stores_ids[i:i+lag])
-            sku_ids_lagged.append(sku_ids[i:i+lag])
-            feature_vector_lagged.append(feature_vector[i:i+lag, :])
-            y_lagged.append(y[i+lag])
-        return (np.array(stores_ids_lagged), np.array(sku_ids_lagged),
-                np.array(feature_vector_lagged), np.array(y_lagged))
+    def get_lagged_data(self, x_y_list):
+        x_y_lagged = []
+        for match in x_y_list:
+            for i in range(match[3].size - self.lag - 1):
+                store = match[0][i]
+                sku = match[1][i]
+                features = match[2][i:i+self.lag]
+                y = match[3][i+self.lag]
+                x_y_lagged.append([store, sku, features, y])
+        return x_y_lagged
 
     def get_x_y(self):
-        stores_ids = self.data_all[:, 2]
-        sku_ids = self.data_all[:, 3]
-        y = self.data_all[:, -2]  # [-2] as new column of normed sales is added
-        feature_vector = self.data_all[:, self.columns + [-1]]  # [-1] is for the addition of normed past sales in vector
-        return stores_ids, sku_ids, feature_vector, y
+        x_y = []
+        for match in self.data_all:
+            stores_ids = match[:, 2]
+            sku_ids = match[:, 3]
+            y = match[:, -2]  # [-2] as new column of normed sales is added
+            feature_vector = match[:, self.columns + [-1]]  # [-1] is for the addition of normed past sales in vector
+            x_y.append([stores_ids, sku_ids, feature_vector, y])
+        return x_y
 
-    def get_match(self):
+    def get_match(self, matches):
         train_matches = []
-        for m in self.matches:
+        for m in matches:
             store_match_train = self.data_all[np.where(self.data_all[:, 2] == m[0])[0]]
             train_single = store_match_train[np.where(store_match_train[:, 3] == m[1])[0]]
             train_matches.append(train_single)
-        return np.concatenate(train_matches)
+        return train_matches
 
     def split_to_years(self, data):
         data = data.to_numpy()
@@ -97,8 +99,8 @@ class Forecasting_Dataset(Dataset):
 
     def encode_cats(self, batch):
         stores_ids, sku_ids, feature_vectors, y = batch
-        onehot_2 = self.onehot_2.transform(stores_ids.reshape(-1, 1).astype(np.object_)).toarray()
-        onehot_3 = self.onehot_3.transform(sku_ids.reshape(-1, 1).astype(np.object_)).toarray()
+        onehot_2 = self.onehot_2.transform(np.array(stores_ids).reshape(1, -1).astype(np.object_)).toarray()
+        onehot_3 = self.onehot_3.transform(np.array(sku_ids).reshape(1, -1).astype(np.object_)).toarray()
 
         emb_2 = torch.LongTensor(np.argmax(onehot_2, axis=1))
         emb_3 = torch.LongTensor(np.argmax(onehot_3, axis=1))
@@ -109,13 +111,12 @@ class Forecasting_Dataset(Dataset):
         return (data - np.min(data)) / (np.max(data) - np.min(data))
 
     def __len__(self):
-        return self.feature_vector_lagged.shape[0]
+        return len(self.x_y_lagged)
 
     def __getitem__(self, idx):
-        batch = (self.stores_ids_lagged[idx].astype(int), self.sku_ids_lagged[idx].astype(int),
-                 self.feature_vector_lagged[idx].astype(float), self.y_lag[idx].astype(float))
+        batch = self.x_y_lagged[idx]
         batch = self.encode_cats(batch)
-        return batch[0], batch[1], torch.Tensor(batch[2]), torch.Tensor([batch[3]]) #, self.matches.astype(int)
+        return batch[0], batch[1], torch.Tensor(batch[2].astype(float)), torch.Tensor([batch[3]]) #, self.matches.astype(int)
 
 
 def get_matches(path):

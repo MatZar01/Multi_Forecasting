@@ -36,7 +36,7 @@ class MLP_base(nn.Module):
         store_embedding = self.store_embedder(store_in)
         sku_embedding = self.sku_embedder(sku_in)
 
-        concatenated = torch.concatenate([store_embedding, sku_embedding, feature_vector], dim=-1).reshape(feature_vector.shape[0], -1)
+        concatenated = torch.concatenate([store_embedding.squeeze(), sku_embedding.squeeze(), feature_vector.squeeze()], dim=1)
 
         features = self.model(concatenated)
 

@@ -1,5 +1,5 @@
 config = {
-    'DEVICE': 'cuda',
+    'DEVICE': 'cpu',
     'DATA_PATH': 'DS/train.csv',
     'ONEHOT_EMBEDDERS': {'C2': 'embedders/onehot_C2.pkl',
                          'C3': 'embedders/onehot_C3.pkl'},
@@ -13,7 +13,7 @@ config = {
     'YEARS': {'TRAIN': 1, 'META': 2, 'TEST': 3},
 
     'MODEL': 'MLP_base',
-    'EMBEDDING_SIZE': 3,
+    'EMBEDDING_SIZE': 5,
 
     'EPOCHS_PRE': 100,
     'EPOCHS_META': 60,

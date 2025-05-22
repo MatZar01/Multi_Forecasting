@@ -28,29 +28,21 @@ if __name__ == '__main__':
     multitask_manager = MultiTask_Manager(config=config, grapher=grapher, logger=logger, model_lib=models_lib,
                                           loss_lib=loss_lib)
 
-    """random_pairs = multitask_manager.select_random_pairs(number=config['RANDOM_PAIR_NUM'], seed=config['SEED'])
-    multitask_manager.add_random_pairs_to_tasks(random_pairs)
-
     # pre train
     multitask_manager.fit_simple(task=-1)
 
-    # train selected random pairs
-    for t in multitask_manager.task_to_pair.keys():
-        multitask_manager.fit_simple(task=t)
+    # train in similarity-based loop
+    while True:
+        # get pair from matches_left
+        pair = multitask_manager.select_new_pair()
 
-    # group the rest of the pairs
-    print('[INFO] GROUPING PAIRS')
-    matches_left_num = len(multitask_manager.matches_left)
-    for i in tqdm(range(matches_left_num)):
-        multitask_manager.add_test_pair_to_task(multitask_manager.matches_left[0])
 
-    # train groups
-    for t in multitask_manager.task_to_pair.keys():
-        multitask_manager.fit_simple(task=t)
+        if len(multitask_manager.matches_left) == 0:
+            break
 
-    grapher.save_metadata(multitask_manager)"""
+    grapher.save_metadata(multitask_manager)
 
-    # pre train
+    """# pre train
     multitask_manager.fit_simple(task=-1)
 
     stds = []
@@ -70,4 +62,4 @@ if __name__ == '__main__':
         means.append(np.mean(out_scores))
         grapher.save_mean_std_plot(means, stds)
 
-    print('[INFO] DONE!')
+    print('[INFO] DONE!')"""

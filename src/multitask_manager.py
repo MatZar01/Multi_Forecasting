@@ -3,6 +3,8 @@ import torch
 from src import L_model
 import lightning as L
 import numpy as np
+from sklearn.metrics.pairwise import euclidean_distances
+from sklearn.metrics import root_mean_squared_error
 
 
 class MultiTask_Manager:

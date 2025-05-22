@@ -15,14 +15,14 @@ config = {
     'MODEL': 'MLP_base',
     'EMBEDDING_SIZE': 5,
 
-    'EPOCHS_PRE': 100,
-    'EPOCHS_META': 60,
+    'EPOCHS_PRE': 1,
+    'EPOCHS_META': 1,
 
     'LR_PRE': 1e-2,
     'LR_META': 1e-3,
 
     'WEIGHT_DECAY': 0.04,
-    'BATCH_SIZE': 10,
+    'BATCH_SIZE': 5,
 
     'TEST_FN': 'RMSELoss',
     'LOSS_FN': 'MSE',

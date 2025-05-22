@@ -5,6 +5,8 @@ import lightning as L
 import numpy as np
 from sklearn.metrics.pairwise import euclidean_distances
 from sklearn.metrics import root_mean_squared_error
+from tqdm import tqdm
+from .print_style import Style
 
 
 class MultiTask_Manager:
@@ -38,7 +40,7 @@ class MultiTask_Manager:
                                  embedding_dim=config['EMBEDDING_SIZE'],
                                  device=config['DEVICE']).to(config['DEVICE'])
 
-    def add_simple_task(self, task_number):
+    def add_simple_task(self, task_number, pair):
         self.model.add_head(task_number)
 
         if task_number == -1:
@@ -51,12 +53,59 @@ class MultiTask_Manager:
                                                                     amsgrad=False)
             if task_number not in self.task_to_pair.keys():
                 self.task_to_pair[task_number] = []
-                new_pair = self.select_new_pair()
-                self.task_to_pair[task_number].append(new_pair)
-                self.pair_to_task[f'{new_pair}'] = task_number
+                self.task_to_pair[task_number].append(pair)
+                self.pair_to_task[f'{pair}'] = task_number
 
             # select new dataloaders for task
             self.select_dataloader(task_number)
+
+    def add_temporal_task(self, init_task, pair, mode):
+        """
+        Adds temporal task 0 to check performance
+        """
+        # use -1 task or init_task head
+        if mode == 'tune':
+            self.model.add_head(task=0, copy_task=init_task)
+        else:
+            self.model.add_head(task=0)
+
+        # set optimizer for temporal task
+        self.task_to_optimizer[0] = torch.optim.AdamW(self.model.parameters(), lr=self.config['LR_META'],
+                                                      weight_decay=self.config['WEIGHT_DECAY'],
+                                                      amsgrad=False)
+
+        # select dataloader for temporal task
+        self.select_temp_dataloader(task_number=init_task, pair=pair, mode=mode)
+
+    def check_similarity(self, pair, mode):
+        """
+        Returns the number of most similar task
+        SIM is computed as RMSE or EUC error, so less is better ;-)
+        """
+
+        print(f'{Style.GREEN}[INFO]{Style.RESET} Checking similarity across {Style.ORANGE}{len(self.pair_to_task)}{Style.RESET} tasks')
+        # get pair data
+        _, _, _, pair_data, _ = get_dataloader(config=self.config, year=self.config['YEARS']['TRAIN'], matches=[pair])
+        pair_data = np.mean(np.concatenate([x[2].astype(float) for x in pair_data.x_y_lagged], axis=1), axis=1)
+
+        sims = []
+        tasks = []
+        # compute sim for every task
+        for key in tqdm(self.task_to_pair):
+            tasks.append(key)
+            pairs = self.task_to_pair[key]
+            _, _, _, task_data, _ = get_dataloader(config=self.config, year=self.config['YEARS']['TRAIN'],
+                                                   matches=pairs)
+            task_data = np.mean(np.concatenate([x[2].astype(float) for x in task_data.x_y_lagged], axis=1), axis=1)
+
+            # get sim
+            if mode == 'RMSE':
+                sim = root_mean_squared_error(pair_data.reshape(1, -1), task_data.reshape(1, -1))
+            else:
+                sim = euclidean_distances(pair_data.reshape(1, -1), task_data.reshape(1, -1))
+            sims.append(sim)
+
+            return tasks[np.argmin(sims)]
 
     def select_new_pair(self):
         new_pair = self.matches_left.pop(0)
@@ -84,6 +133,20 @@ class MultiTask_Manager:
         self.train_dataloader, self.test_dataloader, data_info, train_data, test_data = get_dataloader(config=self.config,
                                                                                 year=self.config['YEARS']['META'],
                                                                                 matches=matches)
+
+    def select_temp_dataloader(self, task_number, pair, mode):
+        if mode == 'tune':
+            matches = self.task_to_pair[task_number]
+            matches.append(pair)
+            self.train_dataloader, self.test_dataloader, data_info, train_data, test_data = get_dataloader(
+                config=self.config,
+                year=self.config['YEARS']['META'],
+                matches=matches)
+        else:
+            self.train_dataloader, self.test_dataloader, data_info, train_data, test_data = get_dataloader(
+                config=self.config,
+                year=self.config['YEARS']['META'],
+                matches=[pair])
 
     def test_pair(self, pair):
         print('[INFO] testing model...')
@@ -140,9 +203,6 @@ class MultiTask_Manager:
         else:
             max_epochs = self.config['EPOCHS_PRE']
 
-        # add task for training
-        self.add_simple_task(task)
-
         light_model = L_model(model=self.model, loss_fn=self.loss_fn, test_fn=self.test_fn,
                               optimizer=self.task_to_optimizer[task], config=self.config, grapher=self.grapher,
                               task=task)
@@ -155,3 +215,5 @@ class MultiTask_Manager:
         # train model
         light_trainer.fit(model=light_model, train_dataloaders=self.train_dataloader,
                           val_dataloaders=self.test_dataloader)
+
+        return light_model.best_error_train, light_model.best_error_test

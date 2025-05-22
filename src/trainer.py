@@ -2,6 +2,7 @@ import lightning as L
 import numpy as np
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from .model_manager import Model_Manager
+from .print_style import Style
 
 
 class L_model(L.LightningModule):
@@ -103,4 +104,4 @@ class L_model(L.LightningModule):
 
     def on_train_end(self):
         self.grapher.save_data(task=self.task)
-        print(f'[INFO] TRAINING END\nTrain error: {self.best_error_train}\nVal error: {self.best_error_test}')
+        print(f'{Style.GREEN}[INFO]{Style.RESET} TRAINING END\nTrain error: {Style.BLUE}{self.best_error_train}{Style.RESET}\nVal error: {Style.BLUE}{self.best_error_test}{Style.RESET}')

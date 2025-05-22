@@ -44,9 +44,16 @@ class MLP_base(nn.Module):
 
         return logits
 
-    def add_head(self, task):
+    def add_head(self, task, copy_task=None):
         if task == -1:
             self.heads[str(task)] = nn.Linear(64, 1).to(self.device)
+        elif task == 0:
+            if copy_task is None:
+                new_head = deepcopy(self.heads[str(-1)])
+                self.heads[str(0)] = new_head
+            else:
+                new_head = deepcopy(self.heads[str(copy_task)])
+                self.heads[str(0)] = new_head
         else:
             if str(task) not in self.heads.keys():
                 new_head = deepcopy(self.heads[str(-1)])

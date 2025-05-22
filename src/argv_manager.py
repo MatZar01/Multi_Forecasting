@@ -1,6 +1,7 @@
 import sys
 import importlib
 import yaml
+from .print_style import Style
 
 
 def get_args() -> dict:
@@ -10,9 +11,9 @@ def get_args() -> dict:
     args = sys.argv
 
     if len(args) == 1:
-        print(f'[INFO] No training arguments specified, using "{cfg_name}"')
+        print(f'{Style.GREEN}[INFO]{Style.RESET} No training arguments specified, using "{cfg_name}"')
     else:
-        print(f'[INFO] using "{args[-1]}" training arguments')
+        print(f'{Style.GREEN}[INFO]{Style.RESET} using "{args[-1]}" training arguments')
         cfg_name = args[-1]
 
     extension = cfg_name.split('.')[-1]
@@ -22,7 +23,7 @@ def get_args() -> dict:
             config = yaml.load(open(cfg_name, 'r'), Loader=yaml.Loader)
         except FileNotFoundError:
             config = None
-            print(f'[ERROR] Config "{cfg_name}" not found \n[INFO] Aborting')
+            print(f'{Style.RED}[ERROR]{Style.RESET} Config "{cfg_name}" not found \n{Style.GREEN}[INFO]{Style.RESET} Aborting')
             sys.exit()
     else:
         if extension == 'py': cfg_name = cfg_name[:-3]
@@ -31,7 +32,7 @@ def get_args() -> dict:
             config = cfg_module.config
         except ModuleNotFoundError:
             config = None  # for consistency
-            print(f'[ERROR] Config "{cfg_name}" not found in ./cfgs\n[INFO] Aborting')
+            print(f'{Style.RED}[ERROR]{Style.RESET} Config "{cfg_name}" not found in ./cfgs\n{Style.GREEN}[INFO]{Style.RESET} Aborting')
             sys.exit()
 
     return config

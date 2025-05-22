@@ -9,6 +9,7 @@ from src import get_matches, get_dataloader
 from src import L_model
 from src import Grapher
 from src import MultiTask_Manager
+from src import Style
 from tqdm import tqdm
 
 
@@ -29,12 +30,33 @@ if __name__ == '__main__':
                                           loss_lib=loss_lib)
 
     # pre train
+    print(f'{Style.GREEN}[INFO]{Style.RESET} Pre-training...')
+    multitask_manager.add_simple_task(task_number=-1, pair=None)
     multitask_manager.fit_simple(task=-1)
 
     # train in similarity-based loop
     while True:
         # get pair from matches_left
         pair = multitask_manager.select_new_pair()
+
+        # add new task and train new pair if tasks are empty
+        if not multitask_manager.task_to_pair:
+            multitask_manager.add_simple_task(task_number=1, pair=pair)
+            multitask_manager.fit_simple(task=1)
+            continue
+
+        # get most similar task
+        task_sim = multitask_manager.check_similarity(pair=pair, mode=config['SIM'])
+
+        # compare performance between updated, existing head vs new head from -1 task
+        # both will use temporal task == 0
+        # first finetune from the best sim task
+        multitask_manager.add_temporal_task(init_task=task_sim, pair=pair, mode='tune')
+        tune_error_train, tune_error_test = multitask_manager.fit_simple(task=0)
+
+        # then train new pair from scratch
+        multitask_manager.add_temporal_task(init_task=task_sim, pair=pair, mode='scratch')
+        scratch_error_train, scratch_error_test = multitask_manager.fit_simple(task=0)
 
 
         if len(multitask_manager.matches_left) == 0:

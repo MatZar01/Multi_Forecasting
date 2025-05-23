@@ -49,8 +49,17 @@ class Grapher:
             lr = self.lr[-1] + self.lr[task]
             return error_train, error_test, loss_train, loss_test, lr
 
-    def save_yaml(self, task):
+    def update_temp_name(self, task, temp_task, temp_mode):
+        if temp_task is not None:
+            return f'{temp_task}_{temp_mode}'
+        else:
+            return task
+
+    def save_yaml(self, task, temp_task=None, temp_mode=None):
         error_train, error_test, loss_train, loss_test, lr = self.select_data(task)
+
+        # update task number if it was temporal
+        task = self.update_temp_name(task, temp_task, temp_mode)
 
         out_dict = {'epoch_num': len(error_train),
                     'lr': self.lr,
@@ -66,8 +75,11 @@ class Grapher:
         yaml.dump(config_copy, open(f'{self.path}/{task}/results.yml', 'w'))
         self.overall_results[task] = out_dict
 
-    def save_graphs(self, task):
+    def save_graphs(self, task, temp_task=None, temp_mode=None):
         error_train, error_test, loss_train, loss_test, lr = self.select_data(task)
+
+        # update task number if it was temporal
+        task = self.update_temp_name(task, temp_task, temp_mode)
 
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(18, 6))
 
@@ -142,9 +154,9 @@ class Grapher:
         plt.savefig(f'{self.path}/stds.png')
         plt.clf()
 
-    def save_data(self, task):
-        self.save_yaml(task=task)
-        self.save_graphs(task=task)
+    def save_data(self, task, temp_task=None, temp_mode=None):
+        self.save_yaml(task=task, temp_task=temp_task, temp_mode=temp_mode)
+        self.save_graphs(task=task, temp_task=temp_task, temp_mode=temp_mode)
 
     def save_metadata(self, multitask_manager):
         task_to_pair = multitask_manager.task_to_pair

@@ -59,6 +59,10 @@ class MLP_base(nn.Module):
                 new_head = deepcopy(self.heads[str(-1)])
                 self.heads[str(task)] = new_head
 
+    def transfer_temp_head(self, task_number):
+        transfer_head = deepcopy(self.heads[str(0)])
+        self.heads[str(task_number)] = transfer_head
+
     def freeze_model_layers(self):
         for param in self.model.parameters():
             param.requires_grad = False

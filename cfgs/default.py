@@ -15,8 +15,8 @@ config = {
     'MODEL': 'MLP_base',
     'EMBEDDING_SIZE': 5,
 
-    'EPOCHS_PRE': 1,
-    'EPOCHS_META': 1,
+    'EPOCHS_PRE': 100,
+    'EPOCHS_META': 50,
 
     'LR_PRE': 1e-2,
     'LR_META': 1e-3,

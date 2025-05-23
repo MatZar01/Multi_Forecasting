@@ -6,7 +6,7 @@ from .print_style import Style
 
 
 class L_model(L.LightningModule):
-    def __init__(self, model, loss_fn, test_fn, optimizer, config, grapher, task):
+    def __init__(self, model, loss_fn, test_fn, optimizer, config, grapher, task, temp_task, temp_mode):
         super().__init__()
 
         self.model = model
@@ -16,11 +16,17 @@ class L_model(L.LightningModule):
         self.grapher = grapher
         self.task = task
 
+        self.temp_task = temp_task
+        self.temp_mode = temp_mode
+
         self.grapher.error_train[task] = []
         self.grapher.error_test[task] = []
         self.grapher.loss_train[task] = []
         self.grapher.loss_test[task] = []
         self.grapher.lr[task] = []
+
+        # update task folder if in temp mode
+        task = self.grapher.update_temp_name(task=task, temp_task=temp_task, temp_mode=temp_mode)
         self.grapher.add_task_folder(task)
 
         self.model_manager = Model_Manager(save_path=grapher.checkpoint_path)
@@ -83,7 +89,7 @@ class L_model(L.LightningModule):
         self.error_train = []
         self.loss_train = []
 
-        self.grapher.save_data(task=self.task)
+        self.grapher.save_data(task=self.task, temp_task=self.temp_task, temp_mode=self.temp_mode)
 
     def on_validation_epoch_end(self):
         test_error = np.nanmean(self.error_test).item()
@@ -103,5 +109,5 @@ class L_model(L.LightningModule):
         self.model_manager.save_model(model=self.model, current_error=self.best_error_test, task=self.task)
 
     def on_train_end(self):
-        self.grapher.save_data(task=self.task)
+        self.grapher.save_data(task=self.task, temp_task=self.temp_task, temp_mode=self.temp_mode)
         print(f'{Style.GREEN}[INFO]{Style.RESET} TRAINING END\nTrain error: {Style.BLUE}{self.best_error_train}{Style.RESET}\nVal error: {Style.BLUE}{self.best_error_test}{Style.RESET}')

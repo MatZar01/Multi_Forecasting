@@ -7,6 +7,7 @@ from sklearn.metrics.pairwise import euclidean_distances
 from sklearn.metrics import root_mean_squared_error
 from tqdm import tqdm
 from .print_style import Style
+from copy import deepcopy
 
 
 class MultiTask_Manager:
@@ -77,13 +78,23 @@ class MultiTask_Manager:
         # select dataloader for temporal task
         self.select_temp_dataloader(task_number=init_task, pair=pair, mode=mode)
 
+    def transfer_temporal_task(self, task_number):
+        # transfer newly trained head to new task
+        self.model.transfer_temp_head(task_number)
+        # update optimizer
+        self.task_to_optimizer[task_number] = torch.optim.AdamW(self.model.parameters(), lr=self.config['LR_META'],
+                                                                weight_decay=self.config['WEIGHT_DECAY'],
+                                                                amsgrad=False)
+        # register new task in dicts
+        self.task_to_pair[task_number] = []
+
     def check_similarity(self, pair, mode):
         """
         Returns the number of most similar task
         SIM is computed as RMSE or EUC error, so less is better ;-)
         """
 
-        print(f'{Style.GREEN}[INFO]{Style.RESET} Checking similarity across {Style.ORANGE}{len(self.pair_to_task)}{Style.RESET} tasks')
+        print(f'{Style.GREEN}[INFO]{Style.RESET} Checking similarity across {Style.ORANGE}{len(self.task_to_pair.keys())}{Style.RESET} tasks')
         # get pair data
         _, _, _, pair_data, _ = get_dataloader(config=self.config, year=self.config['YEARS']['TRAIN'], matches=[pair])
         pair_data = np.mean(np.concatenate([x[2].astype(float) for x in pair_data.x_y_lagged], axis=1), axis=1)
@@ -105,7 +116,7 @@ class MultiTask_Manager:
                 sim = euclidean_distances(pair_data.reshape(1, -1), task_data.reshape(1, -1))
             sims.append(sim)
 
-            return tasks[np.argmin(sims)]
+        return tasks[np.argmin(sims)]
 
     def select_new_pair(self):
         new_pair = self.matches_left.pop(0)
@@ -136,7 +147,7 @@ class MultiTask_Manager:
 
     def select_temp_dataloader(self, task_number, pair, mode):
         if mode == 'tune':
-            matches = self.task_to_pair[task_number]
+            matches = deepcopy(self.task_to_pair[task_number])
             matches.append(pair)
             self.train_dataloader, self.test_dataloader, data_info, train_data, test_data = get_dataloader(
                 config=self.config,
@@ -194,7 +205,7 @@ class MultiTask_Manager:
         self.task_to_pair[task].append(pair)
         self.pair_to_task[f'{pair}'] = task
 
-    def fit_simple(self, task):
+    def fit_simple(self, task, temp_task_num=None, mode=None):
         self.model.train()
         # freeze feature extractor for all tasks except -1
         if task != -1:
@@ -205,7 +216,7 @@ class MultiTask_Manager:
 
         light_model = L_model(model=self.model, loss_fn=self.loss_fn, test_fn=self.test_fn,
                               optimizer=self.task_to_optimizer[task], config=self.config, grapher=self.grapher,
-                              task=task)
+                              task=task, temp_task=temp_task_num, temp_mode=mode)
 
         light_trainer = L.Trainer(accelerator=self.config['DEVICE'], max_epochs=max_epochs,
                                   limit_train_batches=500, limit_val_batches=400,

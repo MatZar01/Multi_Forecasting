@@ -34,6 +34,9 @@ if __name__ == '__main__':
     multitask_manager.add_simple_task(task_number=-1, pair=None)
     multitask_manager.fit_simple(task=-1)
 
+    # set task counter
+    task_count = 1
+
     # train in similarity-based loop
     while True:
         # get pair from matches_left
@@ -50,38 +53,29 @@ if __name__ == '__main__':
 
         # compare performance between updated, existing head vs new head from -1 task
         # both will use temporal task == 0
+        temp_task_real_number = task_count + 1  # but we'll update temp number anyway
         # first finetune from the best sim task
         multitask_manager.add_temporal_task(init_task=task_sim, pair=pair, mode='tune')
-        tune_error_train, tune_error_test = multitask_manager.fit_simple(task=0)
+        tune_error_train, tune_error_test = multitask_manager.fit_simple(task=0,
+                                                                         temp_task_num=temp_task_real_number,
+                                                                         mode='tune')
 
         # then train new pair from scratch
         multitask_manager.add_temporal_task(init_task=task_sim, pair=pair, mode='scratch')
-        scratch_error_train, scratch_error_test = multitask_manager.fit_simple(task=0)
+        scratch_error_train, scratch_error_test = multitask_manager.fit_simple(task=0,
+                                                                               temp_task_num=temp_task_real_number,
+                                                                               mode='scratch')
 
+        # now compare training error and decide if add to init_task or create new task
+        if tune_error_test < scratch_error_test:
+            multitask_manager.add_pair_to_task(task=task_sim, pair=pair)  # add to init_task
+        else:
+            task_count += 1  # update number of tasks
+            multitask_manager.transfer_temporal_task(task_number=task_count)  # add new task from temporal
+            multitask_manager.add_pair_to_task(task=task_count, pair=pair)  # and add pair to it
 
         if len(multitask_manager.matches_left) == 0:
             break
 
     grapher.save_metadata(multitask_manager)
-
-    """# pre train
-    multitask_manager.fit_simple(task=-1)
-
-    stds = []
-    means = []
-
-    multitask_manager.task_to_pair[1] = []
-    for pair in multitask_manager.matches_left:
-        multitask_manager.matches_used.append(pair)
-        multitask_manager.add_pair_to_task(task=1, pair=pair)
-        multitask_manager.fit_simple(task=1)
-        out_scores = []
-        for pair_test in multitask_manager.matches_used:
-            test_score = multitask_manager.test_pair(pair=pair_test)[0]
-            out_scores.append(test_score)
-
-        stds.append(np.std(out_scores))
-        means.append(np.mean(out_scores))
-        grapher.save_mean_std_plot(means, stds)
-
-    print('[INFO] DONE!')"""
+    print(f'{Style.GREEN}[INFO]{Style.RESET} DONE!')

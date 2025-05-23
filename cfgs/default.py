@@ -15,8 +15,8 @@ config = {
     'MODEL': 'MLP_base',
     'EMBEDDING_SIZE': 5,
 
-    'EPOCHS_PRE': 1,
-    'EPOCHS_META': 1,
+    'EPOCHS_PRE': 100,
+    'EPOCHS_META': 50,
 
     'LR_PRE': 1e-2,
     'LR_META': 1e-3,
@@ -26,8 +26,8 @@ config = {
 
     'SIM': 'RMSE',  # RMSE or EUC
 
-    'TEST_FN': 'RMSELoss',
-    'LOSS_FN': 'MSE',
+    'TEST_FN': 'RMSELoss',  # RMSELoss or MSE
+    'LOSS_FN': 'MSE',  # RMSELoss or MSE
 
     'SCHEDULER_PRE': {'FACTOR': 0.6, 'PATIENCE': 20, 'THRESHOLD': 1e-3},
     'SCHEDULER_META': {'FACTOR': 0.8, 'PATIENCE': 10, 'THRESHOLD': 1e-3}

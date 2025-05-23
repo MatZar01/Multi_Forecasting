@@ -32,7 +32,7 @@ if __name__ == '__main__':
                                           loss_lib=loss_lib)
 
     # pre train
-    print(f'{Style.GREEN}[INFO]{Style.RESET} Pre-training...')
+    print(f'{Style.green("[INFO]")} Pre-training...')
     multitask_manager.add_simple_task(task_number=-1, pair=None)
     multitask_manager.fit_simple(task=-1)
 
@@ -43,8 +43,8 @@ if __name__ == '__main__':
     counter = 0  # initialize pair counter
     while True:
         counter += 1
-        print(f'{Style.GREEN}[INFO]{Style.RESET} Training {Style.ORANGE}{counter}{Style.RESET} of '
-              f'{Style.BLUE}{len(multitask_manager.matches_all)}{Style.RESET} matches.')
+        print(f'{Style.green("[INFO]")} Training {Style.orange(counter)} of '
+              f'{Style.blue(len(multitask_manager.matches_all))} matches.')
         # get pair from matches_left
         pair = multitask_manager.select_new_pair()
 
@@ -74,11 +74,11 @@ if __name__ == '__main__':
 
         # now compare training error and decide if add to init_task or create new task
         if tune_error_test < scratch_error_test:
-            print(f'{Style.GREEN}[INFO]{Style.RESET} updating task {Style.BLUE}{task_sim}{Style.RESET}')
+            print(f'{Style.green("[INFO]")} updating task {Style.blue(task_sim)}')
             multitask_manager.add_pair_to_task(task=task_sim, pair=pair)  # add to init_task
         else:
             task_count += 1  # update number of tasks
-            print(f'{Style.GREEN}[INFO]{Style.RESET} adding task {Style.BLUE}{task_count}{Style.RESET}')
+            print(f'{Style.green("[INFO]")} adding task {Style.blue(task_count)}')
             multitask_manager.transfer_temporal_task(task_number=task_count)  # add new task from temporal
             multitask_manager.add_pair_to_task(task=task_count, pair=pair)  # and add pair to it
 
@@ -86,4 +86,4 @@ if __name__ == '__main__':
             break
 
     grapher.save_metadata(multitask_manager)
-    print(f'{Style.GREEN}[INFO]{Style.RESET} DONE!')
+    print(f'{Style.green("[INFO]")} DONE!')

@@ -110,4 +110,4 @@ class L_model(L.LightningModule):
 
     def on_train_end(self):
         self.grapher.save_data(task=self.task, temp_task=self.temp_task, temp_mode=self.temp_mode)
-        print(f'{Style.GREEN}[INFO]{Style.RESET} TRAINING END\nTrain error: {Style.BLUE}{self.best_error_train}{Style.RESET}\nVal error: {Style.BLUE}{self.best_error_test}{Style.RESET}')
+        print(f'{Style.green("[INFO]")} TRAINING END\nTrain error: {Style.blue(self.best_error_train)}\nVal error: {Style.blue(self.best_error_test)}')

@@ -94,7 +94,7 @@ class MultiTask_Manager:
         SIM is computed as RMSE or EUC error, so less is better ;-)
         """
 
-        print(f'{Style.GREEN}[INFO]{Style.RESET} Checking similarity across {Style.ORANGE}{len(self.task_to_pair.keys())}{Style.RESET} tasks')
+        print(f'{Style.green("[INFO]")} Checking similarity across {Style.orange(len(self.task_to_pair.keys()))} tasks')
         # get pair data
         _, _, _, pair_data, _ = get_dataloader(config=self.config, year=self.config['YEARS']['TRAIN'], matches=[pair])
         pair_data = np.mean(np.concatenate([x[2].astype(float) for x in pair_data.x_y_lagged], axis=1), axis=1)
@@ -160,7 +160,7 @@ class MultiTask_Manager:
                 matches=[pair])
 
     def test_pair(self, pair):
-        print('[INFO] testing model...')
+        print(f'{Style.green("[INFO]")} testing model...')
         self.model.eval()
         self.model.to(self.config['DEVICE'])
         out_scores = []

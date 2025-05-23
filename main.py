@@ -11,10 +11,12 @@ from src import Grapher
 from src import MultiTask_Manager
 from src import Style
 from tqdm import tqdm
+import logging
 
 
 if __name__ == '__main__':
     warnings.filterwarnings('ignore')
+    logging.getLogger('lightning.pytorch').setLevel(logging.ERROR)
     # get training config
     config = get_args()
     # load grapher and logger
@@ -38,7 +40,11 @@ if __name__ == '__main__':
     task_count = 1
 
     # train in similarity-based loop
+    counter = 0  # initialize pair counter
     while True:
+        counter += 1
+        print(f'{Style.GREEN}[INFO]{Style.RESET} Training {Style.ORANGE}{counter}{Style.RESET} of '
+              f'{Style.BLUE}{len(multitask_manager.matches_all)}{Style.RESET} matches.')
         # get pair from matches_left
         pair = multitask_manager.select_new_pair()
 
@@ -68,9 +74,11 @@ if __name__ == '__main__':
 
         # now compare training error and decide if add to init_task or create new task
         if tune_error_test < scratch_error_test:
+            print(f'{Style.GREEN}[INFO]{Style.RESET} updating task {Style.BLUE}{task_sim}{Style.RESET}')
             multitask_manager.add_pair_to_task(task=task_sim, pair=pair)  # add to init_task
         else:
             task_count += 1  # update number of tasks
+            print(f'{Style.GREEN}[INFO]{Style.RESET} adding task {Style.BLUE}{task_count}{Style.RESET}')
             multitask_manager.transfer_temporal_task(task_number=task_count)  # add new task from temporal
             multitask_manager.add_pair_to_task(task=task_count, pair=pair)  # and add pair to it
 

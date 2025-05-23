@@ -221,8 +221,9 @@ class MultiTask_Manager:
         light_trainer = L.Trainer(accelerator=self.config['DEVICE'], max_epochs=max_epochs,
                                   limit_train_batches=500, limit_val_batches=400,
                                   check_val_every_n_epoch=1, log_every_n_steps=1,
-                                  enable_progress_bar=True, enable_checkpointing=False,
-                                  logger=self.logger, num_sanity_val_steps=0)
+                                  enable_progress_bar=False, enable_checkpointing=False,
+                                  logger=self.logger, num_sanity_val_steps=0,
+                                  enable_model_summary=False)
         # train model
         light_trainer.fit(model=light_model, train_dataloaders=self.train_dataloader,
                           val_dataloaders=self.test_dataloader)

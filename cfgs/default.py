@@ -27,7 +27,7 @@ config = {
     'SIM': 'RMSE',  # RMSE or EUC
 
     'TEST_FN': 'RMSELoss',  # RMSELoss or MSE
-    'LOSS_FN': 'MSE',  # RMSELoss or MSE
+    'LOSS_FN': 'RMSELoss',  # RMSELoss or MSE
 
     'SCHEDULER_PRE': {'FACTOR': 0.6, 'PATIENCE': 20, 'THRESHOLD': 1e-3},
     'SCHEDULER_META': {'FACTOR': 0.8, 'PATIENCE': 10, 'THRESHOLD': 1e-3}

@@ -76,11 +76,19 @@ if __name__ == '__main__':
         if tune_error_test < scratch_error_test:
             print(f'{Style.green("[INFO]")} updating task {Style.blue(task_sim)}')
             multitask_manager.add_pair_to_task(task=task_sim, pair=pair)  # add to init_task
+            grapher.overall_results[task_sim] = grapher.overall_results[
+                f'{temp_task_real_number}_tune']  # update overall results
         else:
             task_count += 1  # update number of tasks
             print(f'{Style.green("[INFO]")} adding task {Style.blue(task_count)}')
             multitask_manager.transfer_temporal_task(task_number=task_count)  # add new task from temporal
             multitask_manager.add_pair_to_task(task=task_count, pair=pair)  # and add pair to it
+            grapher.overall_results[task_count] = grapher.overall_results[
+                f'{temp_task_real_number}_scratch']  # update overall results
+
+        # remove temp dicts
+        del grapher.overall_results[f'{temp_task_real_number}_tune']
+        del grapher.overall_results[f'{temp_task_real_number}_scratch']
 
         if len(multitask_manager.matches_left) == 0:
             break

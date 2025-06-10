@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: "Github repository for Dynamic ANN training -- if you use my code in your paper, please cite me :-)"
+authors:
+- family-names: "Żarski"
+  given-names: "Mateusz"
+  orcid: "https://orcid.org/0000-0003-0380-8411"
+title: "Multi_Forecasting"
+version: 1.0.0
+date-released: 2025-06-10
+url: "https://github.com/MatZar01/Multi_Forecasting"

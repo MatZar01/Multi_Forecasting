@@ -33,10 +33,12 @@ class MLP_base(nn.Module):
         self.heads = nn.ModuleDict()
 
     def forward(self, store_in, sku_in, feature_vector, task):
+        batch_size = feature_vector.shape[0]  # get batch size (outside of config)
         store_embedding = self.store_embedder(store_in)
         sku_embedding = self.sku_embedder(sku_in)
 
-        concatenated = torch.concatenate([store_embedding.squeeze(), sku_embedding.squeeze(), feature_vector.squeeze()], dim=1)
+        concatenated = torch.concatenate([store_embedding.squeeze(), sku_embedding.reshape(batch_size, -1),
+                                          feature_vector.reshape(batch_size, -1)], dim=1)
 
         features = self.model(concatenated)
 

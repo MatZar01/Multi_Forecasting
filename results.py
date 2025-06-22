@@ -1,6 +1,7 @@
 import yaml
 import numpy as np
 import os
+from src import Style
 
 ds_path = '/Users/mateusz/Downloads/DS1'
 experiment_list = [f.path for f in os.scandir(ds_path) if f.is_dir()]
@@ -37,8 +38,8 @@ std_min = np.std(test_frac_mins)
 max_test = np.max(test_frac_max)
 std_max = np.std(test_frac_max)
 
-print(f'DS: {ds_path.split("/")[-1]}\n'
-      f'test RMSE: {mean_test}, STD: {std_test}\n'
-      f'test max: {max_test}, STD: {std_max}\n'
-      f'test min: {min_test}, STD: {std_min}')
+print(f'{Style.green("DS:")} {ds_path.split("/")[-1]}\n'
+      f'{Style.orange("test RMSE:")} {Style.green(mean_test)}, {Style.orange("STD:")} {Style.blue(std_test)}\n'
+      f'{Style.orange("test max:")} {Style.green(max_test)}, {Style.orange("STD:")} {Style.blue(std_max)}\n'
+      f'{Style.orange("test min:")} {Style.green(min_test)}, {Style.orange("STD:")} {Style.blue(std_min)}')
 #%%

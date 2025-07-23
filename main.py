@@ -74,12 +74,19 @@ if __name__ == '__main__':
 
         # now compare training error and decide if add to init_task or create new task
         if tune_error_test < scratch_error_test:
+            # add log info
+            best_train, best_test = tune_error_train, tune_error_test
+            selected_head = task_sim
+
             print(f'{Style.green("[INFO]")} updating task {Style.blue(task_sim)}')
             multitask_manager.add_pair_to_task(task=task_sim, pair=pair)  # add to init_task
             grapher.overall_results[task_sim] = grapher.overall_results[
                 f'{temp_task_real_number}_tune']  # update overall results
         else:
+            # add log info
+            best_train, best_test = scratch_error_train, scratch_error_test
             task_count += 1  # update number of tasks
+            selected_head = task_count
             print(f'{Style.green("[INFO]")} adding task {Style.blue(task_count)}')
             multitask_manager.transfer_temporal_task(task_number=task_count)  # add new task from temporal
             multitask_manager.add_pair_to_task(task=task_count, pair=pair)  # and add pair to it
@@ -89,6 +96,11 @@ if __name__ == '__main__':
         # remove temp dicts
         del grapher.overall_results[f'{temp_task_real_number}_tune']
         del grapher.overall_results[f'{temp_task_real_number}_scratch']
+
+        # update grapher log
+        grapher.log[counter-1] = {'head_count': task_count, 'selected_head': selected_head,
+                                  'train': best_train, 'test': best_test}
+        grapher.save_log()
 
         if len(multitask_manager.matches_left) == 0:
             break

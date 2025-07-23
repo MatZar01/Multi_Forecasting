@@ -3,8 +3,7 @@ import torch
 from src import L_model
 import lightning as L
 import numpy as np
-from sklearn.metrics.pairwise import euclidean_distances
-from sklearn.metrics import root_mean_squared_error
+from sklearn.metrics import root_mean_squared_error, mean_gamma_deviance, median_absolute_error
 from tqdm import tqdm
 from .print_style import Style
 from copy import deepcopy
@@ -93,14 +92,23 @@ class MultiTask_Manager:
         Returns the number of most similar task
         SIM is computed as RMSE or EUC error, so less is better ;-)
         """
+        sims = []
+        tasks = []
+
+        # pick random head if mode == RAND
+        if mode == 'RAND':
+            print(f'{Style.green("[INFO]")} MODE is {Style.orange("RAND")}, skipping...')
+
+            for key in self.task_to_pair:
+                tasks.append(key)
+
+            return np.random.choice(tasks).item()
 
         print(f'{Style.green("[INFO]")} Checking similarity across {Style.orange(len(self.task_to_pair.keys()))} tasks')
         # get pair data
         _, _, _, pair_data, _ = get_dataloader(config=self.config, year=self.config['YEARS']['TRAIN'], matches=[pair])
         pair_data = np.mean(np.concatenate([x[2].astype(float) for x in pair_data.x_y_lagged], axis=1), axis=1)
 
-        sims = []
-        tasks = []
         # compute sim for every task
         for key in tqdm(self.task_to_pair):
             tasks.append(key)
@@ -112,8 +120,11 @@ class MultiTask_Manager:
             # get sim
             if mode == 'RMSE':
                 sim = root_mean_squared_error(pair_data.reshape(1, -1), task_data.reshape(1, -1))
-            else:
-                sim = euclidean_distances(pair_data.reshape(1, -1), task_data.reshape(1, -1))
+            elif mode == 'MED':
+                sim = median_absolute_error(pair_data.reshape(1, -1), task_data.reshape(1, -1))
+            elif mode == 'MGD':
+                sim = mean_gamma_deviance(pair_data.reshape(-1, 1), task_data.reshape(-1, 1))
+
             sims.append(sim)
 
         return tasks[np.argmin(sims)]

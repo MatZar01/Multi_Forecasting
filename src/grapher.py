@@ -22,6 +22,7 @@ class Grapher:
         self.lr = {}
 
         self.overall_results = {}
+        self.log = {}
 
     def __set_path(self, base_pt: str):
         date = datetime.now()
@@ -179,3 +180,6 @@ class Grapher:
 
         task_to_pair.update(results)
         yaml.dump(task_to_pair, open(f'{self.path}/metadata.yml', 'w'))
+
+    def save_log(self):
+        yaml.dump(self.log, open(f'{self.path}/log.yml', 'w'))

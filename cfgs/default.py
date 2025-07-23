@@ -24,7 +24,7 @@ config = {
     'WEIGHT_DECAY': 0.04,
     'BATCH_SIZE': 5,
 
-    'SIM': 'RMSE',  # RMSE or EUC
+    'SIM': 'RAND',  # RMSE or MED or MGD or RAND
 
     'TEST_FN': 'RMSELoss',  # RMSELoss or MSE
     'LOSS_FN': 'RMSELoss',  # RMSELoss or MSE

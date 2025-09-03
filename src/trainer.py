@@ -61,7 +61,6 @@ class L_model(L.LightningModule):
         return logits, loss, error
 
     def training_step(self, batch):
-        pass
         logits, loss, error = self.network_step(batch)
 
         self.error_train.append(error.detach().cpu().numpy())

@@ -180,12 +180,6 @@ class CrossStitchMTLRegressor(nn.Module):
         x_list: List[torch.Tensor],
         task_ids: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
-        """
-        If task_ids is None:
-            returns y_all: [B, T]
-        If task_ids is provided (shape [B], dtype long):
-            returns y: [B, 1] (prediction for each sample's task)
-        """
         x_in = self._concat_inputs(x_list)  # [B,17]
         B = x_in.shape[0]
 
@@ -373,27 +367,9 @@ def main():
 
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
 
-    # ------------------------------------------------------------------
-    # Plug in YOUR loaders here:
-    #
-    # train_loader = ...
-    # val_loader   = ...
-    #
-    # Expected batch formats:
-    #   ([x1,x2,x3], y, task_ids)  where y is [B,1], task_ids is [B]
-    # OR
-    #   ([x1,x2,x3], y_all)        where y_all is [B,T] (or [B,T,1])
-    # ------------------------------------------------------------------
-    #train_loader = None
-    #val_loader = None
     config = get_args()
 
     train_loader, val_loader, data_info, train_data, test_data = get_dataloader_cross(config=config, year=1, matches=None)
-
-    if train_loader is None:
-        raise RuntimeError(
-            "Please set train_loader (and optionally val_loader) in main() to your DataLoader."
-        )
 
     best_val = math.inf
     for epoch in range(1, args.epochs + 1):
@@ -404,9 +380,6 @@ def main():
             print(f"epoch {epoch:03d} | train RMSE {tr:.6f} | val RMSE {va:.6f} | best {best_val:.6f}")
         else:
             print(f"epoch {epoch:03d} | train RMSE {tr:.6f}")
-
-    # Save final model if you want:
-    # torch.save(model.state_dict(), "cross_stitch_mtl.pt")
 
 
 if __name__ == "__main__":

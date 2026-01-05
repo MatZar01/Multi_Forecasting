@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 BEST RESULTS:
-epoch 010 | train RMSE 28.754340 | val RMSE 25.982016 | best 25.982016
+epoch 009 | train RMSE 28.825640 | val RMSE 43.759022 | val task RMSE min 3.156615 | val task RMSE max 414.138153 | best 43.759022
 """
 
 from __future__ import annotations
@@ -11,7 +11,7 @@ import math
 import os
 import random
 from dataclasses import dataclass
-from typing import Iterable, List, Optional, Tuple, Union
+from typing import Iterable, List, Optional, Tuple, Union, Dict, Any
 
 import torch
 import torch.nn as nn
@@ -262,30 +262,87 @@ def parse_batch(batch) -> Union[BatchA, BatchB]:
 
 
 @torch.no_grad()
-def evaluate(model: nn.Module, loader: Iterable, device: torch.device) -> float:
+def evaluate(
+    model: torch.nn.Module,
+    loader: Iterable,
+    device: torch.device,
+    num_tasks: int,
+) -> Dict[str, float]:
+    """
+    Returns:
+      overall_rmse: RMSE over *all samples* in val (micro-average)
+      min_task_rmse: min RMSE across tasks that appear in val
+      max_task_rmse: max RMSE across tasks that appear in val
+
+    Supports both batch formats:
+      A) ([x1,x2,x3], y, task_ids)     y: [B,1], task_ids: [B]
+      B) ([x1,x2,x3], y_all)          y_all: [B,T] or [B,T,1]
+    """
     model.eval()
-    loss_fn = RMSELoss(reduction="mean")
-    losses = []
+
+    # Per-task accumulators
+    sse_task = torch.zeros(num_tasks, device=device)   # sum squared error per task
+    n_task = torch.zeros(num_tasks, device=device)     # sample count per task
+
+    # Global accumulators
+    sse_total = torch.tensor(0.0, device=device)
+    n_total = torch.tensor(0.0, device=device)
 
     for batch in loader:
         b = parse_batch(batch)
+
         if isinstance(b, BatchA):
             x_list = [t.to(device) for t in b.x_list]
-            y = b.y.to(device).view(-1, 1)
-            task_ids = b.task_ids.to(device).view(-1)
-            pred = model(x_list, task_ids=task_ids)  # [B,1]
-            loss = loss_fn(pred, y)
+            y = b.y.to(device).view(-1, 1)                 # [B,1]
+            task_ids = b.task_ids.to(device).view(-1)      # [B]
+
+            pred = model(x_list, task_ids=task_ids)        # [B,1]
+            se = (pred - y).squeeze(-1).pow(2)             # [B]
+
+            # global
+            sse_total += se.sum()
+            n_total += se.numel()
+
+            # per-task
+            sse_task.scatter_add_(0, task_ids, se)
+            n_task.scatter_add_(0, task_ids, torch.ones_like(se))
+
         else:
             x_list = [t.to(device) for t in b.x_list]
             y_all = b.y_all.to(device)
             if y_all.ndim == 3 and y_all.shape[-1] == 1:
-                y_all = y_all.squeeze(-1)  # [B,T]
-            pred_all = model(x_list, task_ids=None)  # [B,T]
-            loss = loss_fn(pred_all, y_all)
+                y_all = y_all.squeeze(-1)                  # [B,T]
 
-        losses.append(loss.item())
+            pred_all = model(x_list, task_ids=None)         # [B,T]
+            se_all = (pred_all - y_all).pow(2)              # [B,T]
 
-    return float(sum(losses) / max(1, len(losses)))
+            # global
+            sse_total += se_all.sum()
+            n_total += se_all.numel()
+
+            # per-task: sum over batch dimension
+            sse_task += se_all.sum(dim=0)                   # [T]
+            n_task += torch.tensor(se_all.shape[0], device=device).repeat(num_tasks) \
+                if se_all.shape[1] == num_tasks else torch.ones_like(sse_task) * se_all.shape[0]
+            # NOTE: the above line assumes T == num_tasks. If not, adjust accordingly.
+
+    overall_rmse = torch.sqrt(sse_total / torch.clamp(n_total, min=1.0)).item()
+
+    # task RMSE only for tasks that appear (n_task > 0)
+    mask = n_task > 0
+    if mask.any():
+        task_rmse = torch.sqrt(sse_task[mask] / n_task[mask])
+        min_task_rmse = task_rmse.min().item()
+        max_task_rmse = task_rmse.max().item()
+    else:
+        min_task_rmse = float("nan")
+        max_task_rmse = float("nan")
+
+    return {
+        "overall_rmse": float(overall_rmse),
+        "min_task_rmse": float(min_task_rmse),
+        "max_task_rmse": float(max_task_rmse),
+    }
 
 
 def train_one_epoch(
@@ -375,9 +432,22 @@ def main():
     for epoch in range(1, args.epochs + 1):
         tr = train_one_epoch(model, train_loader, optimizer, device, grad_clip=args.grad_clip)
         if val_loader is not None:
-            va = evaluate(model, val_loader, device)
+            val_metrics = evaluate(
+                model=model,
+                loader=val_loader,
+                device=device,
+                num_tasks=args.num_tasks,
+            )
+            va = val_metrics["overall_rmse"]
             best_val = min(best_val, va)
-            print(f"epoch {epoch:03d} | train RMSE {tr:.6f} | val RMSE {va:.6f} | best {best_val:.6f}")
+
+            print(
+                f"epoch {epoch:03d} | train RMSE {tr:.6f} | "
+                f"val RMSE {va:.6f} | "
+                f"val task RMSE min {val_metrics['min_task_rmse']:.6f} | "
+                f"val task RMSE max {val_metrics['max_task_rmse']:.6f} | "
+                f"best {best_val:.6f}"
+            )
         else:
             print(f"epoch {epoch:03d} | train RMSE {tr:.6f}")
 

@@ -1,8 +1,8 @@
 config = {
     'DEVICE': 'cpu',
-    'DATA_PATH': 'DS/train.csv',
-    'ONEHOT_EMBEDDERS': {'C2': 'embedders/onehot_C2.pkl',
-                         'C3': 'embedders/onehot_C3.pkl'},
+    'DATA_PATH': 'DS3/train.csv',
+    'ONEHOT_EMBEDDERS': {'C2': 'embedders3/onehot_C2.pkl',
+                         'C3': 'embedders3/onehot_C3.pkl'},
     'LOG_DIR': 'log_dir',
 
     'SEED': 24,
@@ -24,7 +24,7 @@ config = {
     'WEIGHT_DECAY': 0.04,
     'BATCH_SIZE': 5,
 
-    'SIM': 'RAND',  # RMSE or MED or MGD or RAND
+    'SIM': 'RMSE',  # RMSE or MED or MGD or RAND
 
     'TEST_FN': 'RMSELoss',  # RMSELoss or MSE
     'LOSS_FN': 'RMSELoss',  # RMSELoss or MSE

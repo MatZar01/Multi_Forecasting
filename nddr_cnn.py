@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 """
+DS1:
 Epoch 010 | train RMSELoss=28.594654 | val RMSE=42.966392 | val min_task_RMSE=3.226013 | val max_task_RMSE=414.038484
+DS2:
+Epoch 010 | train RMSELoss=6.962429 | val RMSE=22.333512 | val min_task_RMSE=4.978598 | val max_task_RMSE=45.025564
+DS3:
+Epoch 004 | train RMSELoss=9031.883219 | val RMSE=24656.353769 | val min_task_RMSE=6.128714 | val max_task_RMSE=118891.334322
 """
 
 from __future__ import annotations
@@ -327,7 +332,7 @@ def train_one_epoch(
 # -----------------------------
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--num_tasks", type=int, default=1155)
+    parser.add_argument("--num_tasks", type=int, default=93)
     parser.add_argument("--epochs", type=int, default=10)
     parser.add_argument("--batch_size", type=int, default=256)
     parser.add_argument("--lr", type=float, default=3e-4)

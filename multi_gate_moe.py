@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 """
+DS1:
 epoch 010 | train_rmse=46.716514 | val_rmse=43.677451 | val_rmse_min=3.621685 | val_rmse_max=409.664398 | tasks_present=1155
+DS2:
+epoch 008 | train_rmse=7.370883 | val_rmse=19.088841 | val_rmse_min=5.665928 | val_rmse_max=46.738939 | tasks_present=500
+DS3:
+epoch 010 | train_rmse=27932.764285 | val_rmse=22634.896145 | val_rmse_min=4.613473 | val_rmse_max=108548.738277 | tasks_present=80
 """
 
 from __future__ import annotations
@@ -298,7 +303,7 @@ def get_dataloaders(args: argparse.Namespace):
 # -------------------------
 def main():
     p = argparse.ArgumentParser()
-    p.add_argument("--n_tasks", type=int, default=1155)
+    p.add_argument("--n_tasks", type=int, default=93)
     p.add_argument("--n_experts", type=int, default=8)
     p.add_argument("--d_expert", type=int, default=64)
     p.add_argument("--task_emb_dim", type=int, default=32)

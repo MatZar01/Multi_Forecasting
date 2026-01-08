@@ -48,7 +48,11 @@ class MLP_base(nn.Module):
 
     def add_head(self, task, copy_task=None):
         if task == -1:
-            self.heads[str(task)] = nn.Linear(64, 1).to(self.device)
+            self.heads[str(task)] = nn.Sequential(
+                nn.Linear(64, 128).to(self.device),
+                nn.Linear(128, 64).to(self.device),
+                nn.Linear(64, 1).to(self.device)
+            )
         elif task == 0:
             if copy_task is None:
                 new_head = deepcopy(self.heads[str(-1)])

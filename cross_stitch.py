@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
 """
 BEST RESULTS:
+DS1:
 epoch 009 | train RMSE 28.825640 | val RMSE 43.759022 | val task RMSE min 3.156615 | val task RMSE max 414.138153 | best 43.759022
+DS2:
+epoch 002 | train RMSE 7.393369 | val RMSE 11.302721 | val task RMSE min 4.173947 | val task RMSE max 22.889055 | best 11.302721
+DS3:
+epoch 004 | train RMSE 8850.887728 | val RMSE 22823.150391 | val task RMSE min 9.824359 | val task RMSE max 103518.203125 | best 22823.150391
 """
 
 from __future__ import annotations
@@ -391,7 +396,7 @@ def train_one_epoch(
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--num_tasks", type=int, default=1155)
+    parser.add_argument("--num_tasks", type=int, default=93) # ds1 1155, ds2 500 ds3 93
     parser.add_argument("--hidden_dim", type=int, default=128)
     parser.add_argument("--num_layers", type=int, default=3)
     parser.add_argument("--rank", type=int, default=8)
